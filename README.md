@@ -4,7 +4,7 @@ Internal device:
 Application for each device in Thread network (MTD or FTD).
 
 External device:
-Application on PC, which test our Thread network. It connect with Thread neetwork via Border Router. 
+Application on PC, which test our Thread network. It connect with Thread network via Border Router. 
 It is located outside network.
 
 

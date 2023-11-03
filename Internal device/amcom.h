@@ -1,6 +1,6 @@
 #ifndef AMCOM_H_
 #define AMCOM_H_
- 
+
 /**
  * This header file defines the API for the AMCOM library that is responsible for sending and receiving AMCOM packets.
  *
@@ -18,20 +18,20 @@
  * CRC - a two-byte field (uint16_t) containing the checksum of the packet. Encoding: little-endian (LSB first)
  *
  */
- 
- 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
- 
+
 /// Indicates that the structure shall be packed
 #define AMPACKED 							__attribute__((packed))
- 
- 
+
+
 /** Structure defining the packet header */
 typedef struct AMPACKED {
 	uint8_t sop;        ///< Start-Of-Packet field (always 0xA1)
@@ -39,26 +39,26 @@ typedef struct AMPACKED {
 	uint8_t length;     ///< Packet payload length (0..200)
 	uint16_t crc;       ///< Cyclic Redundancy Check (CRC) field
 } AMCOM_PacketHeader;
- 
+
 // static assertion to check that the header structure is indeed packed
 //static_assert(5 == sizeof(AMCOM_PacketHeader), "5 != sizeof(AMCOM_PacketHeader)");
- 
+
 enum {
 	/// Maximum size of packet payload
 	AMCOM_MAX_PAYLOAD_SIZE = 200,
 	/// Maximum size of the whole packet
 	AMCOM_MAX_PACKET_SIZE = (200 + sizeof(AMCOM_PacketHeader))
 };
- 
+
 /** Structure defining the packet */
 typedef struct AMPACKED {
 	AMCOM_PacketHeader header;                ///< packet header
 	uint8_t payload[AMCOM_MAX_PAYLOAD_SIZE];  ///< packet payload
 } AMCOM_Packet;
- 
+
 // static assertion to check that the packet structure is indeed packed
 //static_assert(205 == sizeof(AMCOM_Packet), "205 != sizeof(AMCOM_Packet)");
- 
+
 /**
  * Type describing a callback function that will be called when a packet is received.
  *
@@ -66,7 +66,7 @@ typedef struct AMPACKED {
  * @param userContext user defined context associated with the protocol receiver instance
  */
 typedef void (*AMCOM_PacketHandler)(const AMCOM_Packet* packet, void* userContext);
- 
+
 /** Possible states of the packet reception. */
 typedef enum {
 	/// Packet was not started yet
@@ -84,7 +84,7 @@ typedef enum {
 	/// Got whole packet
 	AMCOM_PACKET_STATE_GOT_WHOLE_PACKET = 7
 } AMCOM_PacketState;
- 
+
 /** Structure describing the AM packet receiver */
 typedef struct {
 	/// Place to store the received packet
@@ -98,8 +98,8 @@ typedef struct {
 	/// User-defined context (universal, general-purpose pointer)
 	void* userContext;
 } AMCOM_Receiver;
- 
- 
+
+
 /**
  * @brief Initializes the AMCOM packet receiver.
  *
@@ -109,7 +109,7 @@ typedef struct {
  * @param userContext user defined, general purpose context, that will be fed back to the callback function
  */
 void AMCOM_InitReceiver(AMCOM_Receiver* receiver, AMCOM_PacketHandler packetHandlerCallback, void* userContext);
- 
+
 /**
  * @brief Serializes the packet
  *
@@ -126,7 +126,7 @@ void AMCOM_InitReceiver(AMCOM_Receiver* receiver, AMCOM_PacketHandler packetHand
  *
  */
 size_t AMCOM_Serialize(uint8_t packetType, const void* payload, size_t payloadSize, uint8_t* destinationBuffer);
- 
+
 /**
  * @brief Deserializes the chunk of data, searching for valid AMCOM packets
  *
@@ -139,9 +139,9 @@ size_t AMCOM_Serialize(uint8_t packetType, const void* payload, size_t payloadSi
  * @param dataSize number of bytes in the incoming data
  */
 void AMCOM_Deserialize(AMCOM_Receiver* receiver, const void* data, size_t dataSize);
- 
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
- 
+
 #endif /* AMCOM_H_ */

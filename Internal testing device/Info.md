@@ -1,4 +1,4 @@
-**AKTUALNIE NIC NIE JEST MODYFIKOWANE**
+**STARA WERSJA - AKTUALNIE NIC NIE JEST MODYFIKOWANE**
 
 Informacje co znajduje się w plikach
 

@@ -126,13 +126,15 @@ void initUdp(void)
     struct sockaddr_in6 clientAddr; 
     memset(&clientAddr, 0, sizeof(clientAddr));
     clientAddr.sin6_family = AF_INET6;
-    clientAddr.sin6_port = htons(SendPORT);
+    clientAddr.sin6_port = htons(RecvPORT);
     if (inet_pton(AF_INET6, send_addr, &(clientAddr.sin6_addr)) <= 0) {
         perror("Błąd podczas konwersji adresu IP");
         exit(1);
     }
 
-    size_t bytesToSent = sendto(send_sock, buf, strlen(buf), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+
+    
+    size_t bytesToSent = sendto(send_sock, (const char*) buf, AMCOM_MAX_PACKET_SIZE, 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
         if (bytesToSent < 0) {
             perror("Błąd podczas wysyłania wiadomości");
             exit(1);

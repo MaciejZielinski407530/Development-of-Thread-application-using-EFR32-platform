@@ -3,11 +3,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "amcom.h"
-
+#include <sys/time.h>
  
 #define AMCOM_MAX_DEVICE_NAME_LEN 24
  
 #define AMCOM_MAX_PDR_TEST  10
+
+#define AMCOM_MAX_RTT_TEST  10
+#define AMCOM_MAX_RTT_PACKET  10
  
 #define AMCOM_MAX_NEIGHBOR  10
  
@@ -42,28 +45,36 @@ typedef enum {
 typedef struct AMPACKED {
       char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
       char deviceAddr[AMCOM_MAX_ADDRESS_LEN];
+      char deviceState;
+      bool active;
 } AMCOM_IdentifyRequestPayload;
  
  
 typedef struct AMPACKED {
   char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   char deviceAddr[AMCOM_MAX_ADDRESS_LEN];
-  char deviceState;
-  bool active;
 } AMCOM_IdentifyResponsePayload;
  
 typedef struct AMPACKED {
-  //uint8_t test_number;
-  uint8_t packet_number;
+  uint8_t test_number;
+  uint16_t packet_number;
 } AMCOM_RTT_RequestPayload;
  
 typedef struct AMPACKED {
-  //uint8_t test_number;
-  uint8_t packet_nunmber;
-  uint64_t current_time;
-  bool sync_state;
+  uint8_t test_number;
+  uint16_t packet_nunmber;
 } AMCOM_RTT_ResponsePayload;
+
+typedef struct{
+struct timeval start;
+struct timeval stop;
+}RTT_TIME;
  
+typedef struct {
+  RTT_TIME rtt_info_time [AMCOM_MAX_RTT_PACKET];
+ }RTT_INFO;
+
+
 typedef struct AMPACKED {   // Czy wysyłać pakiet potwierdzający, że klient otrzymał AMCOM PDR_START
   uint8_t expect_tests;
   uint16_t expect_packets;

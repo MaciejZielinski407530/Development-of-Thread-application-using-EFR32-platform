@@ -10,35 +10,76 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
- 
-#define DEVICE_NAME "Stolica"
+#include <sys/time.h>
 
  
-AMCOM_IdentifyRequestPayload id_request;
-AMCOM_IdentifyResponsePayload id_response[AMCOM_MAX_NEIGHBOR];
+#define DEVICE_NAME "Stolica"
+#define RT rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8]
  
-AMCOM_RTT_RequestPayload rtt_request;
-AMCOM_RTT_ResponsePayload rtt_response;
-rtt_stat rtt;
+static AMCOM_IdentifyRequestPayload id_request[AMCOM_MAX_NEIGHBOR];
+static AMCOM_IdentifyResponsePayload id_response;
  
-AMCOM_PDR_StartPayload pdr_start;
-AMCOM_PDR_StopPayload pdr_stop;
-AMCOM_PDR_RequestPayload pdr_request;
-AMCOM_PDR_ResponsePayload pdr_response;
+static AMCOM_RTT_RequestPayload rtt_request;
+static AMCOM_RTT_ResponsePayload rtt_response;
+
  
-AMCOM_RSSI_RequestPayload rssi;
+static AMCOM_PDR_StartPayload pdr_start;
+static AMCOM_PDR_StopPayload pdr_stop;
+static AMCOM_PDR_RequestPayload pdr_request;
+static AMCOM_PDR_ResponsePayload pdr_response;
+ 
+static AMCOM_RSSI_RequestPayload rssi;
+
+static RTT_INFO rtt_information [AMCOM_MAX_RTT_TEST];
+
+static struct timeval rtt_start, rtt_stop;
  
 void search_addr(void);
  
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
-    size_t n =0;
+    
  
     switch (packet->header.type) {
       case AMCOM_IDENTIFY_REQUEST:
+            size_t n=0;
+            for(n = 0; n<AMCOM_MAX_NEIGHBOR ; n++){
+                  if(false == id_request[n].active){
+                    for(int i = 0; i< AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                        id_request[n].deviceName [i] = packet->payload[i];
+                     }
+                     printf("CLI name: %s\n", id_request[n].deviceName);
+ 
+                     for(int i = AMCOM_MAX_DEVICE_NAME_LEN; i< (AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN); i++){
+                         id_request[n].deviceAddr [i-AMCOM_MAX_DEVICE_NAME_LEN] = packet->payload[i];
+                     }
+                     printf("CLI addr: %s\n", id_request[n].deviceAddr);
+ 
+                     id_request[n].deviceState = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN];
+                     printf("CLI state: %c\n", id_request[n].deviceState);
+ 
+                     id_request[n].active = true;
+                     break;
+                  }
+            }
+            //AMCOM_IdentifyResponsePayload id_response;
+            //search_addr();
+            
+            sprintf(id_response.deviceName, DEVICE_NAME);
+            sprintf(id_response.deviceAddr,"fe80::943b:1475:2b7b:da1");
+            bytesToSend = AMCOM_Serialize(AMCOM_IDENTIFY_RESPONSE, &id_response, sizeof(id_response), amcomBuf);
+                
+            printf("Adres: %s\n", (const char*) id_response.deviceAddr);
+            printf("identify%d,  %s\n",bytesToSend, (const char*) amcomBuf);
+            if (bytesToSend > 0) {
+                UDPsend(amcomBuf, id_request[n].deviceAddr);
+            }
+
+
               break;
       case AMCOM_IDENTIFY_RESPONSE:
+      /*
               for(int n = 0; n<AMCOM_MAX_NEIGHBOR ; n++){
                   if(false == id_response[n].active){
                     for(int i = 0; i< AMCOM_MAX_DEVICE_NAME_LEN; i++){
@@ -59,19 +100,16 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
                   }
  
                   }
+                  */
               break;
       case AMCOM_RTT_REQUEST:
               break;
-      case AMCOM_RTT_RESPONSE:
-              if(rtt_request.packet_number==packet->payload[0]){
-                  //otNetworkTimeGet(otGetInstance(),&rtt.stop_time);
- 
-                  rtt.half_time = packet->payload[1] | packet->payload[2] << 8 | packet->payload[3] << 16 | packet->payload[4] << 24
-                      | packet->payload[5] << 32 | packet->payload[6] << 40| packet->payload[7] << 48 | packet->payload[8] << 56;
- 
- 
- 
-              }
+      case AMCOM_RTT_RESPONSE:              
+            gettimeofday(&RT.stop, NULL);
+            
+            printf("STOP Test: %d, Pakiet: %d, Czas: %lld ",packet->payload[0],packet->payload[1]|packet->payload[2]<<8, (long long int)(rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_sec * 1000000 + rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_usec));
+            printf(" Czas rtt : %lld us\n", (long long int) (RT.stop.tv_sec - RT.start.tv_sec)*1000000+(RT.stop.tv_usec-RT.start.tv_usec));
+
               break;
       case AMCOM_PDR_START:
               break;
@@ -80,11 +118,12 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_PDR_REQUEST:
               break;
       case AMCOM_PDR_RESPONSE:
- 
-              for(size_t i = 1; i <= AMCOM_MAX_PDR_TEST; i++){
-                  pdr_response.recv_packets[i] = packet->payload[n]|packet->payload[n+1]<<8;
-                  n+=2;
-                  printf("Test: %d Recv packets: %d All packets: %d \n", i, pdr_response.recv_packets[i], pdr_start.expect_packets);
+            printf("Odebrane pdr response\n");
+            size_t m =0;
+            for(size_t i = 0; i <= AMCOM_MAX_PDR_TEST; i++){
+                  pdr_response.recv_packets[i] = packet->payload[m]| packet->payload[m+1]<<8;
+                  m+=2;
+                  printf("Test: %d Recv packets: %d All packets: %d \n", i+1, pdr_response.recv_packets[i], pdr_start.expect_packets);
  
               }
  
@@ -97,7 +136,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
         break;
     }
 }
- 
+ /*
 void identify_req (void){
       static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
       size_t bytesToSend = 0;
@@ -112,77 +151,84 @@ void identify_req (void){
           UDPsend(amcomBuf, MULTICAST_ADDR);
         }
 }
-
+*/
 void search_addr(){
     struct ifaddrs *ifaddr, *ifa;
  
-    // Pobierz informacje o interfejsach sieciowych
     if (getifaddrs(&ifaddr) == -1) {
         perror("getifaddrs");
         exit(1);
     }
  
-    // Przeszukaj listę interfejsów w poszukiwaniu adresów IPv6
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET6 && strcmp(ifa->ifa_name,"enp0s8")==0) {           
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET6 && strcmp(ifa->ifa_name,"wpan0")==0) {           
             struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)ifa->ifa_addr;
  
-            // Konwertuj adres IPv6 na napis
-            if (inet_ntop(AF_INET6, &(ipv6->sin6_addr), id_request.deviceAddr, sizeof(id_request.deviceAddr)) != NULL) {
-                //printf("Adres IPv6 na interfejsie %s: %s\n", ifa->ifa_name, ipString);
+        
+            if (inet_ntop(AF_INET6, &(ipv6->sin6_addr), id_response.deviceAddr, sizeof(id_response.deviceAddr)) != NULL) {
+                printf("Adres IPv6 na interfejsie %s: %s\n", ifa->ifa_name, id_response.deviceAddr);
                 break;
             }
         }
     }
  
-    // Zwolnij pamięć po informacjach o interfejsach
     freeifaddrs(ifaddr);
 }
  
 void pdr_test(void){
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
-        pdr_start.expect_packets=25;
+        pdr_start.expect_packets=1000;
         pdr_start.expect_tests=1;
         bytesToSend = AMCOM_Serialize(AMCOM_PDR_START, &pdr_start, sizeof(pdr_start), amcomBuf);
 
              if (bytesToSend > 0) {
-                 UDPsend(amcomBuf, id_response[0].deviceAddr);
+                 UDPsend(amcomBuf, id_request[0].deviceAddr);
                  printf("I sent start\n");
                }
           pdr_request.test_number = 1;
  
          for (int i=0; i < pdr_start.expect_packets; i++){
+             usleep(100000);
              pdr_request.packet_number = i;
              bytesToSend = AMCOM_Serialize(AMCOM_PDR_REQUEST, &pdr_request, sizeof(pdr_request), amcomBuf);
              if (bytesToSend > 0) {
-                 UDPsend(amcomBuf, id_response[0].deviceAddr);
+                 UDPsend(amcomBuf, id_request[0].deviceAddr);
                  printf("I sent %d \n",pdr_request.packet_number);
                  }
+            
          }
  
          pdr_stop.perform_tests = pdr_start.expect_tests;
          bytesToSend = AMCOM_Serialize(AMCOM_PDR_STOP, &pdr_stop, sizeof(pdr_stop), amcomBuf);
          if (bytesToSend > 0) {
-               UDPsend(amcomBuf, id_response[0].deviceAddr);
+               UDPsend(amcomBuf, id_request[0].deviceAddr);
                printf("I sent stop\n");
                }
 }
-/*
+
 void rtt_test(void){
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
-        if(rtt_request.packet_number == NULL){
-            rtt_request.packet_number=0;
+        
+
+        for(int i=0; i<5; i++){
+            for (int n=0; n<5;n++){           
+            usleep(100000);
+            rtt_request.test_number=i;
+            rtt_request.packet_number=n;
+            bytesToSend = AMCOM_Serialize(AMCOM_RTT_REQUEST, &rtt_request, sizeof(rtt_request), amcomBuf);
+            if (bytesToSend > 0) { 
+                gettimeofday(&rtt_information[i].rtt_info_time[n].start, NULL);  
+                printf("START Test: %d, Pakiet: %d, Czas: %lld",i,n, (long long int)(rtt_information[i].rtt_info_time[n].start.tv_sec * 1000000 + rtt_information[i].rtt_info_time[n].start.tv_usec));
+
+                UDPsend(amcomBuf, id_request[0].deviceAddr);
+                printf("I sent rtt request\n");
+            }
+           
+            }
+
         }
-        else{
-            rtt_request.packet_number++;
-        }
-        bytesToSend = AMCOM_Serialize(AMCOM_RTT_REQUEST, &rtt_request, sizeof(rtt_request), amcomBuf);
-        if (bytesToSend > 0) {
-            //otNetworkTimeGet(otGetInstance(),&rtt.start_time);
-            UDPsend(amcomBuf, id_response[0].deviceAddr);
-            printf("I sent rtt request\n");
-           }
+        
+        
 }
-*/

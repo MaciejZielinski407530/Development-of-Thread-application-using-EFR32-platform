@@ -11,7 +11,7 @@
 #define AMCOM_MAX_NEIGHBOR  10
 
 #define AMCOM_MAX_ADDRESS_LEN  40
-#define MULTICAST_ADDR "ff03::1"
+#define MULTICAST_ADDR "ff02::1"
 
 
 
@@ -42,26 +42,25 @@ typedef enum {
 typedef struct AMPACKED {
   char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   char deviceAddr[AMCOM_MAX_ADDRESS_LEN];
+  char deviceState;
+  bool active;
 } AMCOM_IdentifyRequestPayload;
 
 
 typedef struct AMPACKED {
   char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   char deviceAddr[AMCOM_MAX_ADDRESS_LEN];
-  char deviceState;
-  bool empty;
+
 } AMCOM_IdentifyResponsePayload;
 
 typedef struct AMPACKED {
-  //uint8_t test_number;
-  uint8_t packet_number;
+  uint8_t test_number;
+  uint16_t packet_number;
 } AMCOM_RTT_RequestPayload;
 
 typedef struct AMPACKED {
-  //uint8_t test_number;
-  uint8_t packet_nunmber;
-  uint64_t current_time;
-  bool sync_state;
+  uint8_t test_number;
+  uint16_t packet_nunmber;
 } AMCOM_RTT_ResponsePayload;
 
 typedef struct AMPACKED {   // Czy wysyłać pakiet potwierdzający, że klient otrzymał AMCOM PDR_START

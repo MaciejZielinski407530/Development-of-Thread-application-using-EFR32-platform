@@ -1,3 +1,4 @@
+
 /***************************************************************************//**
  * @file
  * @brief Core application logic.
@@ -16,7 +17,7 @@
  ******************************************************************************/
 // Define module name for Power Manager debuging feature.
 #define CURRENT_MODULE_NAME    "OPENTHREAD_SAMPLE_APP"
-#define DEVICE_NAME  "miasto"
+
 
 #include <assert.h>
 #include <openthread-core-config.h>
@@ -28,8 +29,11 @@
 #include <openthread/network_time.h>
 #include "openthread-system.h"
 #include "app.h"
+#include "app_function.h"
 
 #include "reset_util.h"
+#include "em_cmu.h"
+#include "em_emu.h"
 
 #include "sl_component_catalog.h"
 #ifdef SL_CATALOG_POWER_MANAGER_PRESENT
@@ -41,13 +45,24 @@
 #include "sl_simple_button.h"
 #endif
 
+
+
 void setNetworkConfiguration(void);
 void initUdp(void);
 extern void otAppCliInit(otInstance *aInstance);
 
+volatile int msTickCount;
+
 static otInstance *    sInstance       = NULL;
 static bool            sButtonPressed  = false;
 static bool            sStayAwake      = true;
+extern bool identified;
+
+void SysTick_Handler(void){
+
+  msTickCount++;
+
+}
 
 otInstance *otGetInstance(void)
 {
@@ -136,14 +151,13 @@ void sl_ot_cli_init(void)
 void app_init(void)
 {
     OT_SETUP_RESET_JUMP(argv);
-    setNetworkConfiguration();
+    //setNetworkConfiguration();
     initUdp();
-    otNetworkTimeSetSyncPeriod(sInstance, 30);
-    otNetworkTimeSetXtalThreshold(sInstance, 300);
+    SysTick_Config(CMU_ClockFreqGet( cmuClock_CORE )/1000);
 
 
-    assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
-    assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
+    //assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
+    //assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
 }
 
 /**************************************************************************//**
@@ -153,6 +167,12 @@ void app_process_action(void)
 {
     otTaskletsProcess(sInstance);
     otSysProcessDrivers(sInstance);
+
+    if (msTickCount > 10000 && identified == false && get_dev_state() != 'D'){
+        identify_request();
+        msTickCount = 0;
+    }
+
 }
 
 /**************************************************************************//**

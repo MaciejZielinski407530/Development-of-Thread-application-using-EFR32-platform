@@ -31,9 +31,11 @@ int main(void){
         }
         else if(strcmp(buff,"Test 1\n")==0){
             printf("Wybrano Test 1 \n");
+            pdr_test();
         }
         else if(strcmp(buff,"Test 2\n")==0){
             printf("Wybrano Test 2 \n");
+            rtt_test();
         }
         else if(strcmp(buff,"Test 3\n")==0){
             printf("Wybrano Test 3 \n");

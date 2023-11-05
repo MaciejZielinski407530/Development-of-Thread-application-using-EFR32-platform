@@ -11,13 +11,6 @@
 #include "amcom.h"
  
  
-typedef struct{
-  uint64_t start_time;
-  uint64_t half_time;
-  uint64_t stop_time;
-}rtt_stat;
- 
- 
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext);
  
 void identify_req (void);

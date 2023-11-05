@@ -1,3 +1,4 @@
+
 #define CURRENT_MODULE_NAME    "OPENTHREAD_SAMPLE_APP"
 
 #include <string.h>
@@ -15,7 +16,7 @@
 #include <common/code_utils.hpp>
 #include <common/logging.hpp>
 
-#include "fun_main.h"
+#include "app_function.h"
 #include "amcom.h"
 
 
@@ -24,7 +25,8 @@
 #include "sl_power_manager.h"
 #endif
 
-#define MULTICAST_PORT 9876
+#define SendPORT 8888
+#define RecvPORT 8080
 
 otInstance *otGetInstance(void);
 void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
@@ -96,7 +98,7 @@ void initUdp(void)
 
     // Initialize bindAddr
     memset(&bindAddr, 0, sizeof(bindAddr));
-    bindAddr.mPort = MULTICAST_PORT;
+    bindAddr.mPort = RecvPORT;
 
     // Open the socket
     error = otUdpOpen(otGetInstance(), &sMtdSocket, mtdReceiveCallback, NULL);
@@ -125,7 +127,7 @@ void UDPsend (uint8_t* buf[AMCOM_MAX_PACKET_SIZE], size_t* bytesToSend, const ch
 
       memset(&messageInfo, 0, sizeof(messageInfo));
       memcpy(&messageInfo.mPeerAddr, &send_address, sizeof messageInfo.mPeerAddr);
-      messageInfo.mPeerPort = MULTICAST_PORT;
+      messageInfo.mPeerPort = RecvPORT;
 
       SuccessOrExit(otMessageAppend(message, buf, bytesToSend));
 
@@ -154,11 +156,12 @@ void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo
 
       // Read the received message's payload
       receivedBytesCount = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
-      buf[receivedBytesCount] = '\0';
+      //buf[receivedBytesCount] = '\0';
 
       memcpy(&RecvAddress, &aMessageInfo->mPeerAddr, sizeof RecvAddress);
       otIp6AddressToString(&RecvAddress, ipaddress, sizeof(ipaddress));
-      otCliOutputFormat("Message Received from %s \r\n", ipaddress );
+      //otCliOutputFormat("Message Received from %s :%s\r\n", ipaddress , buf);
+      otCliOutputFormat("Message Received from %s \r\n", ipaddress);
 
 
       AMCOM_Deserialize(&amcomReceiver, buf, receivedBytesCount);

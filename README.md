@@ -9,7 +9,7 @@ It is located outside network.
 
 
 Internal testing device:
-Application for FTD, which test a Thread network. It is a similar to application in "Outside device" directory. 
+Application for FTD, which test a Thread network. It is a similar to application in "External device" directory. 
 It is located inside network.
 
 More information about the code can be found in the folders.

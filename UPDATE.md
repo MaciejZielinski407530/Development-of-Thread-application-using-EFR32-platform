@@ -6,6 +6,6 @@ Internal Device:
 External Device:
 - dodanie możliwości uruchimienia danego testu z parametrami: (ilość testów, ilość pakietów w jednym teście, nazwa badanego urządzenia) (main.c)
 - możliwość wypisania danych o podłaczonych urządzeniach (main.c)
-- poprawienie funkcji pdr_test,() rtt_test(), search_addr() (app_function.c)
+- poprawienie funkcji pdr_test(), rtt_test(), search_addr() (app_function.c)
 - dodanie funkcji dev_list() - wypisuje dane o podłaczonych urządzeniach (app_function.c)
 - dodanie funkcji find_dev() - sprawdzenie czy urządzenie o podanej nazwie jest w tablicy urządzeń podłączonych, zwraca pozycje w tablicy (app_function.c)

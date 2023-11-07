@@ -8,7 +8,7 @@
 
 #include <openthread/thread.h>
 
-#define DEVICE_NAME "Inna"
+
 
 
 static AMCOM_IdentifyRequestPayload id_request;
@@ -55,7 +55,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               bytesToSend = AMCOM_Serialize(AMCOM_RTT_RESPONSE, &rtt_response, sizeof(rtt_response), amcomBuf);
 
               if (bytesToSend > 0) {
-                  UDPsend(amcomBuf, bytesToSend, MULTICAST_ADDR);
+                  UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
                   otCliOutputFormat("Wysylam rtt response");
               }
 
@@ -75,15 +75,20 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_PDR_STOP:
             bytesToSend = AMCOM_Serialize(AMCOM_PDR_RESPONSE, &pdr_response, sizeof(pdr_response), amcomBuf);
 
+            for(int i = 0; i<pdr_start.expect_tests;i++){
+                otCliOutputFormat("Otrzymalem %d pakietow dla testu %d",pdr_response.recv_packets[i],i );
+            }
+
+
                 if (bytesToSend > 0) {
-                     UDPsend(amcomBuf, bytesToSend, MULTICAST_ADDR);
+                     UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
                      otCliOutputFormat("Wysylam pdr response");
                  }
 
 
               break;
       case AMCOM_PDR_REQUEST:
-              pdr_response.recv_packets[packet->payload[0]-1]++;
+              pdr_response.recv_packets[packet->payload[0]]++;
               otCliOutputFormat("%d \n",packet->payload[1]|packet->payload[2]<<8);
               //otCliOutputFormat("%d ",pdr_response.recv_packets[packet->payload[0]]);
               break;
@@ -118,7 +123,7 @@ void identify_request(void){
   static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
   size_t bytesToSend = 0;
 
-  sprintf(id_request.deviceName, DEVICE_NAME );
+  sprintf(id_request.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()) );
   otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
   //while(address){
   otIp6AddressToString(&(address->mNext->mNext)->mAddress, id_request.deviceAddr, AMCOM_MAX_ADDRESS_LEN);

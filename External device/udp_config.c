@@ -11,46 +11,14 @@
 #include "app_function.h"
  
  
-
 #define SendPORT 8888
 #define RecvPORT 8080
  
-//void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
-
  
 static int send_sock;
 static struct sockaddr_in6 send_appAddr;
 
- /*
-void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo)
-{
- 
-      otIp6Address     RecvAddress;
-      static AMCOM_Receiver amcomReceiver;    // AMCOM receiver structure
-      static char buf[512];                   // buffer for temporary data
-      int receivedBytesCount;
- 
- 
-      char   ipaddress[40];
 
- 
-      AMCOM_InitReceiver(&amcomReceiver, amcomPacketHandler,NULL);
- 
-      // Read the received message's payload
-      receivedBytesCount = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
-      buf[receivedBytesCount] = '\0';
- 
-      memcpy(&RecvAddress, &aMessageInfo->mPeerAddr, sizeof RecvAddress);
-      otIp6AddressToString(&RecvAddress, ipaddress, sizeof(ipaddress));
-      otCliOutputFormat("Message Received from %s \r\n", ipaddress );
- 
- 
-      AMCOM_Deserialize(&amcomReceiver, buf, receivedBytesCount);
- 
- 
- 
-}
-*/
 void *recv_function(void *arg){
     int recv_sock;
     struct sockaddr_in6 recv_appAddr, recv_clientAddr;
@@ -71,7 +39,7 @@ void *recv_function(void *arg){
     recv_appAddr.sin6_family = AF_INET6;
     recv_appAddr.sin6_port = htons(RecvPORT);
     recv_appAddr.sin6_addr = in6addr_any;
- 
+    
     // Bindowanie gniazda do określonego portu
     if (bind(recv_sock, (struct sockaddr *)&recv_appAddr, sizeof(recv_appAddr)) < 0) {
         perror("Błąd podczas bindowania gniazda");
@@ -140,32 +108,6 @@ void initUdp(void)
             exit(1);
         }
 
-
-
-
-
-     /*
-      otMessageInfo    messageInfo;
-      otMessage       *message = NULL;
- 
-      otIp6Address send_address;
-      otIp6AddressFromString(send_addr, &send_address);
- 
- 
-      //otCliOutputFormat("UDPAddress %s\n", send_addr);
-      VerifyOrExit((message = otUdpNewMessage(otGetInstance(), NULL)) != NULL);
-      otCliOutputFormat(" UDP sending =  %d\n",bytesToSend);
-      memset(&messageInfo, 0, sizeof(messageInfo));
-      memcpy(&messageInfo.mPeerAddr, &send_address, sizeof messageInfo.mPeerAddr);
-      messageInfo.mPeerPort = MULTICAST_PORT;
-      SuccessOrExit(otMessageAppend(message, buf, bytesToSend));
-      otCliOutputFormat("MessageAppend\n");
-      SuccessOrExit(otUdpSend(otGetInstance(), &sMtdSocket, message, &messageInfo));
-      otCliOutputFormat("Wyslalem\n");
-      message = NULL;
-      exit:
-          return;
- */
 }
  
  

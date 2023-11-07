@@ -35,6 +35,7 @@ static RTT_INFO rtt_information [AMCOM_MAX_RTT_TEST];
 static struct timeval rtt_start, rtt_stop;
  
 void search_addr(void);
+
  
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
@@ -64,10 +65,10 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
                   }
             }
             //AMCOM_IdentifyResponsePayload id_response;
-            //search_addr();
-            
+            search_addr();
+            //id_response.deviceAddr = 
             sprintf(id_response.deviceName, DEVICE_NAME);
-            sprintf(id_response.deviceAddr,"fe80::943b:1475:2b7b:da1");
+            //sprintf(id_response.deviceAddr,"fe80::943b:1475:2b7b:da1");
             bytesToSend = AMCOM_Serialize(AMCOM_IDENTIFY_RESPONSE, &id_response, sizeof(id_response), amcomBuf);
                 
             printf("Adres: %s\n", (const char*) id_response.deviceAddr);
@@ -120,7 +121,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_PDR_RESPONSE:
             printf("Odebrane pdr response\n");
             size_t m =0;
-            for(size_t i = 0; i <= AMCOM_MAX_PDR_TEST; i++){
+            for(size_t i = 0; i <= pdr_stop.perform_tests; i++){
                   pdr_response.recv_packets[i] = packet->payload[m]| packet->payload[m+1]<<8;
                   m+=2;
                   printf("Test: %d Recv packets: %d All packets: %d \n", i+1, pdr_response.recv_packets[i], pdr_start.expect_packets);
@@ -152,7 +153,7 @@ void identify_req (void){
         }
 }
 */
-void search_addr(){
+void search_addr(void){
     struct ifaddrs *ifaddr, *ifa;
  
     if (getifaddrs(&ifaddr) == -1) {
@@ -161,10 +162,13 @@ void search_addr(){
     }
  
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET6 && strcmp(ifa->ifa_name,"wpan0")==0) {           
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET6 && strcmp(ifa->ifa_name,"enp0s8")==0) {           
             struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)ifa->ifa_addr;
- 
-        
+
+            if(!(ipv6->sin6_scope_id ==0)){
+                continue;
+            }
+
             if (inet_ntop(AF_INET6, &(ipv6->sin6_addr), id_response.deviceAddr, sizeof(id_response.deviceAddr)) != NULL) {
                 printf("Adres IPv6 na interfejsie %s: %s\n", ifa->ifa_name, id_response.deviceAddr);
                 break;
@@ -175,30 +179,33 @@ void search_addr(){
     freeifaddrs(ifaddr);
 }
  
-void pdr_test(void){
+void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
-        pdr_start.expect_packets=1000;
-        pdr_start.expect_tests=1;
+        pdr_start.expect_packets = n_packets;
+        pdr_start.expect_tests = n_tests;
         bytesToSend = AMCOM_Serialize(AMCOM_PDR_START, &pdr_start, sizeof(pdr_start), amcomBuf);
 
              if (bytesToSend > 0) {
                  UDPsend(amcomBuf, id_request[0].deviceAddr);
                  printf("I sent start\n");
                }
-          pdr_request.test_number = 1;
+          
+        for(int n = 0; n < n_tests; n++){
+            pdr_request.test_number = n;
  
-         for (int i=0; i < pdr_start.expect_packets; i++){
-             usleep(100000);
-             pdr_request.packet_number = i;
-             bytesToSend = AMCOM_Serialize(AMCOM_PDR_REQUEST, &pdr_request, sizeof(pdr_request), amcomBuf);
-             if (bytesToSend > 0) {
-                 UDPsend(amcomBuf, id_request[0].deviceAddr);
-                 printf("I sent %d \n",pdr_request.packet_number);
-                 }
-            
-         }
- 
+            for (int i=0; i < pdr_start.expect_packets; i++){
+                usleep(100000);
+                pdr_request.packet_number = i;
+                bytesToSend = AMCOM_Serialize(AMCOM_PDR_REQUEST, &pdr_request, sizeof(pdr_request), amcomBuf);
+                if (bytesToSend > 0) {
+                    UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
+                    printf("I sent %d \n",pdr_request.packet_number);
+                    }
+                
+                }
+        }
+        sleep(15);
          pdr_stop.perform_tests = pdr_start.expect_tests;
          bytesToSend = AMCOM_Serialize(AMCOM_PDR_STOP, &pdr_stop, sizeof(pdr_stop), amcomBuf);
          if (bytesToSend > 0) {
@@ -207,13 +214,13 @@ void pdr_test(void){
                }
 }
 
-void rtt_test(void){
+void rtt_test(const int n_tests, const int n_packets,const int dev_iterator){
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
         
 
-        for(int i=0; i<5; i++){
-            for (int n=0; n<5;n++){           
+        for(int i=0; i<n_tests; i++){
+            for (int n=0; n<n_packets;n++){           
             usleep(100000);
             rtt_request.test_number=i;
             rtt_request.packet_number=n;
@@ -222,7 +229,7 @@ void rtt_test(void){
                 gettimeofday(&rtt_information[i].rtt_info_time[n].start, NULL);  
                 printf("START Test: %d, Pakiet: %d, Czas: %lld",i,n, (long long int)(rtt_information[i].rtt_info_time[n].start.tv_sec * 1000000 + rtt_information[i].rtt_info_time[n].start.tv_usec));
 
-                UDPsend(amcomBuf, id_request[0].deviceAddr);
+                UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
                 printf("I sent rtt request\n");
             }
            
@@ -231,4 +238,20 @@ void rtt_test(void){
         }
         
         
+}
+
+void dev_list(void){
+    printf("Connected Device List: \n");
+    for(int i = 0; i < AMCOM_MAX_NEIGHBOR; i++){
+        if(strlen(id_request[i].deviceName) > 0)
+            printf("Device name: %s Device Role: %c Device Address: %s\n", id_request[i].deviceName, id_request[i].deviceState, id_request[i].deviceAddr);
+    }
+}
+
+int find_dev (const char* name){
+    for(int i = 0; i < AMCOM_MAX_NEIGHBOR; i++){
+        if(strcmp(id_request[i].deviceName, name) == 0)
+            return i;
+    }
+    return -1;
 }

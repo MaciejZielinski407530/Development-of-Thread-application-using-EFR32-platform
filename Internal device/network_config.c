@@ -146,7 +146,7 @@ void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo
       static AMCOM_Receiver amcomReceiver;    // AMCOM receiver structure
       static char buf[512];                   // buffer for temporary data
       int receivedBytesCount;
-
+      int8_t rssi = otMessageGetRss(aMessage);
 
       char   ipaddress[40];
       OT_UNUSED_VARIABLE(aContext);
@@ -161,7 +161,7 @@ void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo
       memcpy(&RecvAddress, &aMessageInfo->mPeerAddr, sizeof RecvAddress);
       otIp6AddressToString(&RecvAddress, ipaddress, sizeof(ipaddress));
       //otCliOutputFormat("Message Received from %s :%s\r\n", ipaddress , buf);
-      otCliOutputFormat("Message Received from %s \r\n", ipaddress);
+      otCliOutputFormat("Message Received from %s  oraz RSSI = %d dBm\r\n", ipaddress,rssi);
 
 
       AMCOM_Deserialize(&amcomReceiver, buf, receivedBytesCount);

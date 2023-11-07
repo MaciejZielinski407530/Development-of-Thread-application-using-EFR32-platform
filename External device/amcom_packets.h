@@ -33,8 +33,8 @@ typedef enum {
   AMCOM_PDR_REQUEST = 7,      // Pakiet w tescie PDR: Nr. próby, Nr pakietu
   AMCOM_PDR_RESPONSE = 8,     // Odpowiedź na AMCOM_PDR_STOP: informacja na temat ilości odebranych pakietów w danej turze
  
-  AMCOM_RSSI_REQUEST = 9,     // Zapytanie o czas synchronizacji
-  AMCOM_RSSI_RESPONSE = 10,   // Odesłanie swojego czasu, stanu synchronizacji
+  AMCOM_RSSI_REQUEST = 9,     // Zapytanie o RSSI
+  AMCOM_RSSI_RESPONSE = 10,   // Odesłanie RSSI
  
             // Ton
  

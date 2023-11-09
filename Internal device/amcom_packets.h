@@ -19,7 +19,6 @@ typedef enum {
   AMCOM_NO_PACKET = 0,
 
   AMCOM_IDENTIFY_REQUEST = 1,   // Prośba o identyfikacje
-
   AMCOM_IDENTIFY_RESPONSE = 2,    // Odesłanie nazwy, adresu, state
 
   AMCOM_RTT_REQUEST = 3,      // Zapytanie o czas synchronizacji
@@ -30,12 +29,16 @@ typedef enum {
   AMCOM_PDR_REQUEST = 7,      // Pakiet w tescie PDR: Nr. próby, Nr pakietu
   AMCOM_PDR_RESPONSE = 8,     // Odpowiedź na AMCOM_PDR_STOP: informacja na temat ilości odebranych pakietów w danej turze
 
-  AMCOM_RSSI_REQUEST = 9,     // Zapytanie o czas synchronizacji
-  AMCOM_RSSI_RESPONSE = 10,   // Odesłanie swojego czasu, stanu synchronizacji
+  AMCOM_RSSI_REQUEST = 9,     //
+  AMCOM_RSSI_RESPONSE = 10,   //
 
-            // Ton
+  AMCOM_TON_REQUEST = 11,          // Ton
+  AMCOM_TON_RESPONSE = 12,
 
-            // Throughput
+  AMCOM_THROUGHPUT_START = 13,      // Throughput
+  AMCOM_THROUGHPUT_REQUEST = 14,
+  AMCOM_THROUGHPUT_RESPONSE = 15,
+
 
 } AMCOM_PacketType;
 
@@ -83,15 +86,47 @@ typedef struct AMPACKED {
 
 typedef struct AMPACKED {
   uint8_t test_number;
+  uint16_t packet_number;
 } AMCOM_RSSI_RequestPayload;
 
 typedef struct AMPACKED {
-  uint8_t Neighbor_ID;
-  uint16_t RSSI;
-} AMCOM_RSSI;
+  uint8_t test_number;
+  uint16_t packet_number;
+  int8_t rssi;
+} AMCOM_RSSI_ResponsePayload;
+
 
 typedef struct AMPACKED {
-  AMCOM_RSSI neighbor_rssi [AMCOM_MAX_NEIGHBOR];
-} AMCOM_RSSI_ResponsePayload;
+  //uint8_t test_number;
+} AMCOM_TON_RequestPayload;
+
+typedef struct AMPACKED {
+  int time_on;
+} AMCOM_TON_ResponsePayload;
+
+typedef struct AMPACKED {
+  uint16_t expect_packet_size;
+  uint16_t expect_packets;
+} AMCOM_THROUGHPUT_StartPayload;
+
+typedef struct AMPACKED {
+  uint8_t payload [64];               // Packet Size = 64B + 5B = 69B
+} AMCOM_THROUGHPUT_RequestMinPayload;
+
+typedef struct AMPACKED {
+  uint8_t payload [128];              // Packet Size = 128B + 5B = 133B
+} AMCOM_THROUGHPUT_RequestMidPayload;
+
+typedef struct AMPACKED {
+  uint8_t payload [200];              // Packet Size = 200B + 5B = 205B  -> Max AMCOM packet size
+} AMCOM_THROUGHPUT_RequestMaxPayload;
+
+typedef struct AMPACKED {
+  //uint16_t packet_size;
+  uint16_t recv_packets;
+} AMCOM_THROUGHPUT_ResponsePayload;
+
+
+
 
 #endif

@@ -58,8 +58,24 @@ int main(void){
                         printf("Urzadzenie o podanej nazwie nie istnieje\n");
                     }
                 }
-                else if(strcmp(buff,"Test 3\n")==0){
+                if(strcmp(test_name,"RSSI") == 0 && sscanf(buff, "%s %d %d %s\n", test_name, &number_of_tests, &number_of_packet, device_name) == 4){
+                    printf("Wybrano Test 1 \n");
+                    int it = find_dev(device_name);
+                    if(it >= 0 ){
+                        rssi_test(number_of_tests, number_of_packet, it);
+                    } else{
+                        printf("Urzadzenie o podanej nazwie nie istnieje\n");
+                    }
+                    
+                }
+                if(sscanf(buff, "%s %d %s\n", test_name, &number_of_packet, device_name) == 3 && strcmp(test_name,"THR")==0 ){
                     printf("Wybrano Test 3 \n");
+                    int it = find_dev(device_name);
+                    if(it >= 0 ){
+                        thr_test(number_of_packet, it);
+                    } else{
+                        printf("Urzadzenie o podanej nazwie nie istnieje\n");
+                    }
                 }
                 else if(strcmp(buff,"Test 4\n")==0){
                     printf("Wybrano Test 4 \n");

@@ -33,6 +33,11 @@ void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo
 extern void otSysEventSignalPending(void);
 
 static otUdpSocket sMtdSocket;
+static int8_t rssi;
+
+int8_t get_rssi(void){
+  return rssi;
+}
 
 
 void setNetworkConfiguration(void)
@@ -146,7 +151,7 @@ void mtdReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo
       static AMCOM_Receiver amcomReceiver;    // AMCOM receiver structure
       static char buf[512];                   // buffer for temporary data
       int receivedBytesCount;
-      int8_t rssi = otMessageGetRss(aMessage);
+      rssi = otMessageGetRss(aMessage);       // Read Message RSSI
 
       char   ipaddress[40];
       OT_UNUSED_VARIABLE(aContext);

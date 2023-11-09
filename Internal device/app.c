@@ -26,7 +26,7 @@
 #include <openthread/cli.h>
 #include <openthread/diag.h>
 #include <openthread/tasklet.h>
-#include <openthread/network_time.h>
+#include <openthread/thread.h>
 #include "openthread-system.h"
 #include "app.h"
 #include "app_function.h"
@@ -56,12 +56,19 @@ volatile int msTickCount;
 static otInstance *    sInstance       = NULL;
 static bool            sButtonPressed  = false;
 static bool            sStayAwake      = true;
-extern bool identified;
+extern bool            identified;
+static bool            thread_st       = false;
+//static bool            joiner_st       = false;
+
 
 void SysTick_Handler(void){
 
   msTickCount++;
 
+}
+
+int getSysTick_time(void){
+  return msTickCount;
 }
 
 otInstance *otGetInstance(void)
@@ -144,6 +151,10 @@ void sl_ot_cli_init(void)
     otAppCliInit(sInstance);
 }
 
+void JoinerCallback (otError aError, void *aContext){
+
+}
+
 /**************************************************************************//**
  * Application Init.
  *****************************************************************************/
@@ -156,7 +167,8 @@ void app_init(void)
     SysTick_Config(CMU_ClockFreqGet( cmuClock_CORE )/1000);
 
 
-    //assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
+    assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
+    assert(otJoinerStart(sInstance,"J01NU5", NULL, NULL, NULL, NULL, NULL,JoinerCallback,NULL) == OT_ERROR_NONE);
     //assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
 }
 
@@ -167,6 +179,10 @@ void app_process_action(void)
 {
     otTaskletsProcess(sInstance);
     otSysProcessDrivers(sInstance);
+    if(otJoinerGetState(sInstance) == OT_JOINER_STATE_JOINED && thread_st == false){
+        assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
+        thread_st = true;
+    }
 
     if (msTickCount > 10000 && identified == false && get_dev_state() != 'D'){
         identify_request();

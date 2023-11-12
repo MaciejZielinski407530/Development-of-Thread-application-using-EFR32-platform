@@ -1,5 +1,6 @@
 #include "app_function.h"
 #include "amcom_packets.h"
+#include "udp_config.h"
  
 #include <stdio.h>
 #include <string.h>
@@ -13,8 +14,9 @@
 #include <ifaddrs.h>
 #include <sys/time.h>
 
- 
-#define DEVICE_NAME "Stolica"
+// Define device name
+#define DEVICE_NAME "0x0000"
+
 #define RT rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8]
  
 static AMCOM_IdentifyRequestPayload id_request[AMCOM_MAX_NEIGHBOR];
@@ -29,7 +31,6 @@ static AMCOM_PDR_StopPayload pdr_stop;
 static AMCOM_PDR_RequestPayload pdr_request;
 static AMCOM_PDR_ResponsePayload pdr_response;
  
-//static AMCOM_RSSI_RequestPayload rssi;
 static AMCOM_RSSI_ResponsePayload rssi_response;
 
 static RTT_INFO rtt_information [AMCOM_MAX_RTT_TEST];
@@ -42,7 +43,7 @@ static AMCOM_THROUGHPUT_ResponsePayload thr_response;
 static uint16_t number_of_packets_64 [] = {181, 362, 543, 725, 906, 1087, 1268, 1449, 1630, 1812, 1993};
 uint8_t tab [] = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};               // Packet Size = 64B + 5B = 69B
 
- 
+// Function to find application IPv6 address
 void search_addr(void);
 
  
@@ -54,34 +55,45 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     switch (packet->header.type) {
       case AMCOM_IDENTIFY_REQUEST:
             size_t n=0;
-            for(n = 0; n<AMCOM_MAX_NEIGHBOR ; n++){
-                  if(false == id_request[n].active){
-                    for(int i = 0; i< AMCOM_MAX_DEVICE_NAME_LEN; i++){
-                        id_request[n].deviceName [i] = packet->payload[i];
-                     }
-                     printf("CLI name: %s\n", id_request[n].deviceName);
- 
-                     for(int i = AMCOM_MAX_DEVICE_NAME_LEN; i< (AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN); i++){
-                         id_request[n].deviceAddr [i-AMCOM_MAX_DEVICE_NAME_LEN] = packet->payload[i];
-                     }
-                     printf("CLI addr: %s\n", id_request[n].deviceAddr);
- 
-                     id_request[n].deviceState = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN];
-                     printf("CLI state: %c\n", id_request[n].deviceState);
- 
-                     id_request[n].active = true;
-                     break;
-                  }
+            char deviceName_temp [AMCOM_MAX_DEVICE_NAME_LEN];
+            char deviceAddr_temp [AMCOM_MAX_ADDRESS_LEN];
+            char deviceState_temp;
+            for(int i = 0; i< AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                deviceName_temp [i] = packet->payload[i];
             }
-            //AMCOM_IdentifyResponsePayload id_response;
-            search_addr();
-            //id_response.deviceAddr = 
-            sprintf(id_response.deviceName, DEVICE_NAME);
-            //sprintf(id_response.deviceAddr,"fe80::943b:1475:2b7b:da1");
-            bytesToSend = AMCOM_Serialize(AMCOM_IDENTIFY_RESPONSE, &id_response, sizeof(id_response), amcomBuf);
+            for(int i = AMCOM_MAX_DEVICE_NAME_LEN; i< (AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN); i++){
+                deviceAddr_temp[i-AMCOM_MAX_DEVICE_NAME_LEN] = packet->payload[i];
+            }
+            deviceState_temp = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN];
+            
+            for(n = 0; n<AMCOM_MAX_NEIGHBOR ; n++){
+                if(false == id_request[n].active){
+                    sprintf(id_request[n].deviceName, "%s", deviceName_temp);
+                    printf("CLI name: %s\n", id_request[n].deviceName);
+                    sprintf(id_request[n].deviceAddr, "%s", deviceAddr_temp);
+                    printf("CLI addr: %s\n", id_request[n].deviceAddr);
+                    id_request[n].deviceState = deviceState_temp;
+                    printf("CLI state: %c\n", id_request[n].deviceState);
+                    id_request[n].active = true;
+                    break;
+                }
+                if(strcmp(id_request[n].deviceAddr, deviceAddr_temp) == 0 || strcmp(id_request[n].deviceName, deviceName_temp) == 0 ){
+                    sprintf(id_request[n].deviceName, "%s", deviceName_temp);
+                    printf("CLI name update: %s\n", id_request[n].deviceName);
+                    sprintf(id_request[n].deviceAddr, "%s", deviceAddr_temp);
+                    printf("CLI addr update: %s\n", id_request[n].deviceAddr);
+                    id_request[n].deviceState = deviceState_temp;
+                    printf("CLI state update: %c\n", id_request[n].deviceState);
+                    id_request[n].active = true;
+                    break;
+                }
                 
-            printf("Adres: %s\n", (const char*) id_response.deviceAddr);
-            printf("identify%d,  %s\n",bytesToSend, (const char*) amcomBuf);
+            }
+
+            search_addr();
+            sprintf(id_response.deviceName, DEVICE_NAME);
+            bytesToSend = AMCOM_Serialize(AMCOM_IDENTIFY_RESPONSE, &id_response, sizeof(id_response), amcomBuf);
+
             if (bytesToSend > 0) {
                 UDPsend(amcomBuf, id_request[n].deviceAddr);
             }
@@ -89,28 +101,6 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
 
               break;
       case AMCOM_IDENTIFY_RESPONSE:
-      /*
-              for(int n = 0; n<AMCOM_MAX_NEIGHBOR ; n++){
-                  if(false == id_response[n].active){
-                    for(int i = 0; i< AMCOM_MAX_DEVICE_NAME_LEN; i++){
-                        id_response[n].deviceName [i] = packet->payload[i];
-                     }
-                     printf("CLI name: %s\n", id_response[n].deviceName);
- 
-                     for(int i = AMCOM_MAX_DEVICE_NAME_LEN; i< (AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN); i++){
-                         id_response[n].deviceAddr [i-AMCOM_MAX_DEVICE_NAME_LEN] = packet->payload[i];
-                     }
-                     printf("CLI addr: %s\n", id_response[n].deviceAddr);
- 
-                     id_response[n].deviceState = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN];
-                     printf("CLI state: %c\n", id_response[n].deviceState);
- 
-                     id_response[n].active = true;
-                     break;
-                  }
- 
-                  }
-                  */
               break;
       case AMCOM_RTT_REQUEST:
               break;
@@ -160,6 +150,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     }
 }
 
+// Function to find application IPv6 address
 void search_addr(void){
     struct ifaddrs *ifaddr, *ifa;
  
@@ -277,19 +268,18 @@ void thr_test(const int packet_size, const int dev_iterator){
         AMCOM_THROUGHPUT_StartPayload thr_start;
         AMCOM_THROUGHPUT_RequestMinPayload thr_request;
         thr_start.expect_packet_size = packet_size;
-        //thr_start.expect_packets = n_tests;
+
         memcpy(thr_request.payload, tab, sizeof(thr_request.payload));
         for(int n = 0; n < sizeof(number_of_packets_64)/sizeof(number_of_packets_64[0]); n++){
         
-        thr_start.expect_packets = number_of_packets_64[n];
-        bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_START, &thr_start, sizeof(thr_start), amcomBuf);
+            thr_start.expect_packets = number_of_packets_64[n];
+            bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_START, &thr_start, sizeof(thr_start), amcomBuf);
             
-             if (bytesToSend > 0) {
-                 UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                 printf("I sent start\n");
-               }
+            if (bytesToSend > 0) {
+                UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
+                printf("I sent start\n");
+            }
         
-        //thr_request.payload [] = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
           
             for (int i=0; i < number_of_packets_64[n]; i++){
                 usleep(1000000*10/number_of_packets_64[n]);
@@ -300,7 +290,7 @@ void thr_test(const int packet_size, const int dev_iterator){
                     printf("I sent thr %d \n",i);
                     }
                 
-                }
+            }
             sleep(15);
         }
 

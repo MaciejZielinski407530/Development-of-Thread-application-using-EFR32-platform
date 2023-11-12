@@ -6,9 +6,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
  
-#include "amcom.h"
+//#include "amcom.h"
 #include "udp_config.h"
-#include "app_function.h"
+//#include "app_function.h"
  
  
 #define SendPORT 8888
@@ -60,13 +60,6 @@ void *recv_function(void *arg){
     pthread_exit(NULL);
 }
 
-
-void applicationTick(void)
-{
- 
- 
- 
-}
  
 void initUdp(void)
 {

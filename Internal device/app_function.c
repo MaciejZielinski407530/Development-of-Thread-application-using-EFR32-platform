@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <openthread/udp.h>
 
@@ -17,22 +16,20 @@ void UDPsend (uint8_t* buf[AMCOM_MAX_PACKET_SIZE], size_t* bytesToSend, const ch
 static AMCOM_IdentifyRequestPayload id_request;
 static AMCOM_IdentifyResponsePayload id_response;
 
-//static AMCOM_RTT_RequestPayload rtt;
 static AMCOM_RSSI_ResponsePayload rssi_response;
+
 static AMCOM_PDR_StartPayload pdr_start;
-static AMCOM_PDR_StopPayload pdr_stop;
-static AMCOM_PDR_RequestPayload pdr_request;
 static AMCOM_PDR_ResponsePayload pdr_response;
 
 static AMCOM_THROUGHPUT_StartPayload thr_start;
 static AMCOM_THROUGHPUT_ResponsePayload thr_response;
 
-static AMCOM_RSSI_RequestPayload rssi;
 
-bool identified = false;
-int timestamp = 0;
-bool send_thr = false;
+bool  identified = false;
+int   timestamp = 0;
+bool  send_thr = false;
 
+// Handling AMCOM Packets
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
@@ -42,18 +39,22 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
         break;
       case AMCOM_IDENTIFY_RESPONSE:
 
+        // Application name
         for(int i = 0; i< AMCOM_MAX_DEVICE_NAME_LEN; i++){
             id_response.deviceName [i] = packet->payload[i];
         }
-        otCliOutputFormat("BR name: %s\n", id_response.deviceName);
 
+        otCliOutputFormat("BR name: %s\n", id_response.deviceName);
+        // Application address
         for(int i = AMCOM_MAX_DEVICE_NAME_LEN; i< (AMCOM_MAX_DEVICE_NAME_LEN+AMCOM_MAX_ADDRESS_LEN); i++){
             id_response.deviceAddr [i-AMCOM_MAX_DEVICE_NAME_LEN] = packet->payload[i];
         }
         otCliOutputFormat("BR addr: %s\n", id_response.deviceAddr);
+
+        // Identification FLAG
         identified = true;
 
-              break;
+        break;
       case AMCOM_RTT_REQUEST:
               otCliOutputFormat("Otrzymalem rtt req\n");
               AMCOM_RTT_ResponsePayload rtt_response;
@@ -62,9 +63,10 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               rtt_response.packet_nunmber = packet->payload[1]|packet->payload[2]<<8;
               bytesToSend = AMCOM_Serialize(AMCOM_RTT_RESPONSE, &rtt_response, sizeof(rtt_response), amcomBuf);
 
+              // Sending RTT Response
               if (bytesToSend > 0) {
                   UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
-                  otCliOutputFormat("Wysylam rtt response");
+                  otCliOutputFormat("Wysylam rtt response\n");
               }
 
               break;
@@ -87,28 +89,26 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
                 otCliOutputFormat("Otrzymalem %d pakietow dla testu %d",pdr_response.recv_packets[i],i );
             }
 
-
-                if (bytesToSend > 0) {
-                     UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
-                     otCliOutputFormat("Wysylam pdr response");
-                 }
-
-
+            // Sending PDR Response
+            if (bytesToSend > 0) {
+                UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
+                otCliOutputFormat("Wysylam pdr response");
+            }
               break;
       case AMCOM_PDR_REQUEST:
               pdr_response.recv_packets[packet->payload[0]]++;
               otCliOutputFormat("%d \n",packet->payload[1]|packet->payload[2]<<8);
-              //otCliOutputFormat("%d ",pdr_response.recv_packets[packet->payload[0]]);
               break;
-      case AMCOM_PDR_RESPONSE:  // Brak
+      case AMCOM_PDR_RESPONSE:
               break;
       case AMCOM_RSSI_REQUEST:
-
 
               rssi_response.test_number = packet->payload[0];
               rssi_response.packet_number = packet->payload[1]|packet->payload[2]<<8;
               rssi_response.rssi = get_rssi();
               bytesToSend = AMCOM_Serialize(AMCOM_RSSI_RESPONSE, &rssi_response, sizeof(rssi_response), amcomBuf);
+
+              // Sending RSSI Response
               if (bytesToSend > 0) {
                     UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
                     otCliOutputFormat("Wysylam rssi response");
@@ -134,10 +134,10 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               if(getSysTick_time()-timestamp >= 10000 && send_thr == false){
                     bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_RESPONSE, &thr_response, sizeof(thr_response), amcomBuf);
                     send_thr = true;
-                      if (bytesToSend > 0) {
-                           UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
-                           otCliOutputFormat("Wysylam thr response %d recv\n",thr_response.recv_packets );
-                       }
+                    if (bytesToSend > 0) {
+                       UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
+                       otCliOutputFormat("Wysylam thr response %d recv\n",thr_response.recv_packets );
+                    }
               }
 
               break;
@@ -147,6 +147,8 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
         break;
     }
 }
+
+/// Function that determines the state of the device
 char get_dev_state(void){
   otDeviceRole dev_role = otThreadGetDeviceRole(otGetInstance());
   if(dev_role == OT_DEVICE_ROLE_CHILD){
@@ -163,18 +165,21 @@ char get_dev_state(void){
   }
 }
 
-
+/// Function that provide identification on main application.
 void identify_request(void){
   static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
   size_t bytesToSend = 0;
 
   sprintf(id_request.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()) );
 
-
-  //otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
-  //otIp6AddressToString(&(address->mNext)->mAddress, id_request.deviceAddr, AMCOM_MAX_ADDRESS_LEN);
-  otIp6AddressToString(otThreadGetMeshLocalEid(otGetInstance()), id_request.deviceAddr, AMCOM_MAX_ADDRESS_LEN);
-
+  otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
+  while(address->mNext !=NULL){
+      if (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC){
+          otIp6AddressToString(&(address->mAddress), id_request.deviceAddr, AMCOM_MAX_ADDRESS_LEN);
+          break;
+      }
+      address= address->mNext;
+  }
 
   id_request.deviceState = get_dev_state();
 
@@ -182,8 +187,26 @@ void identify_request(void){
 
   otCliOutputFormat("identify%d\n",bytesToSend);
   if (bytesToSend > 0) {
-      UDPsend(amcomBuf, bytesToSend, MULTICAST_ADDR);
+      UDPsend(amcomBuf, bytesToSend, APPLICATION_ADDR);
     }
+}
 
+/// Function that checks the differences between the sent and current identification data.
+bool send_dev_info_correct(void){
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
+  char deviceAddr[AMCOM_MAX_ADDRESS_LEN];
+  sprintf(deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()) );
 
+  otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
+  while(address->mNext !=NULL){
+      if (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC){
+          otIp6AddressToString(&(address->mAddress), deviceAddr, AMCOM_MAX_ADDRESS_LEN);
+          break;
+      }
+      address= address->mNext;
+  }
+  if(id_request.deviceState == get_dev_state() && strcmp(id_request.deviceName,deviceName) == 0 && strcmp(id_request.deviceAddr, deviceAddr)==0)
+    return true;
+
+  return false;
 }

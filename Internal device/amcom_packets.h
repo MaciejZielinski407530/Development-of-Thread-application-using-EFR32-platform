@@ -4,14 +4,15 @@
 #include <stdbool.h>
 #include "amcom.h"
 #include <openthread/thread.h>
-#define AMCOM_MAX_DEVICE_NAME_LEN 24
 
+// Maximum length of device name
+#define AMCOM_MAX_DEVICE_NAME_LEN 10
+// Maximum number of PDR tests
 #define AMCOM_MAX_PDR_TEST  10
-
-#define AMCOM_MAX_NEIGHBOR  10
-
+// Maximum length of IPv6 address
 #define AMCOM_MAX_ADDRESS_LEN  40
-#define MULTICAST_ADDR "ff02::1"
+// Main application IPv6 address
+#define APPLICATION_ADDR "fd11:1111:1122:2222:c99e:51b2:2265:51db"
 
 
 
@@ -125,8 +126,6 @@ typedef struct AMPACKED {
   //uint16_t packet_size;
   uint16_t recv_packets;
 } AMCOM_THROUGHPUT_ResponsePayload;
-
-
 
 
 #endif

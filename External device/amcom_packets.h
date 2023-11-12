@@ -5,17 +5,19 @@
 #include "amcom.h"
 #include <sys/time.h>
 
-#define AMCOM_MAX_DEVICE_NAME_LEN 24
- 
+// Maximum length of device name
+#define AMCOM_MAX_DEVICE_NAME_LEN 10
+// Maximum number of PDR test
 #define AMCOM_MAX_PDR_TEST  10
-
+// Maximum number of RTT test
 #define AMCOM_MAX_RTT_TEST 10
+// Maximum number of RTT packets
 #define AMCOM_MAX_RTT_PACKET 10
- 
+// Maximum number of connected device
 #define AMCOM_MAX_NEIGHBOR  10
- 
+// Maximum length of IPv6 address
 #define AMCOM_MAX_ADDRESS_LEN  40
-#define MULTICAST_ADDR "ff02::1"
+
  
  
  
@@ -79,7 +81,7 @@ typedef struct {
   RTT_TIME rtt_info_time [AMCOM_MAX_RTT_PACKET];
 }RTT_INFO;
  
-typedef struct AMPACKED {   // Czy wysyłać pakiet potwierdzający, że klient otrzymał AMCOM PDR_START
+typedef struct AMPACKED {  
   uint8_t expect_tests;
   uint16_t expect_packets;
 } AMCOM_PDR_StartPayload;

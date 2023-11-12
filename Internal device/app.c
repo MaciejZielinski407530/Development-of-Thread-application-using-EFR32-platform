@@ -45,20 +45,21 @@
 #include "sl_simple_button.h"
 #endif
 
+// Define Commissioner PSKd
+#define COMMISSIONER_PSKd "J01NU5"
+// Define Commissioner Timeout [s]
+#define COMMISSIONER_TIMEOUT 100
 
-
-void setNetworkConfiguration(void);
 void initUdp(void);
 extern void otAppCliInit(otInstance *aInstance);
 
 volatile int msTickCount;
-
+static int             identify_time;
 static otInstance *    sInstance       = NULL;
 static bool            sButtonPressed  = false;
 static bool            sStayAwake      = true;
-extern bool            identified;
 static bool            thread_st       = false;
-//static bool            joiner_st       = false;
+extern bool            identified;
 
 
 void SysTick_Handler(void){
@@ -91,6 +92,7 @@ void sl_ot_rtos_application_tick(void)
 {
     if (sButtonPressed)
     {
+        otCliOutputFormat("przycisk\n");
         sButtonPressed = false;
         sStayAwake     = !sStayAwake;
         if (sStayAwake)
@@ -151,9 +153,6 @@ void sl_ot_cli_init(void)
     otAppCliInit(sInstance);
 }
 
-void JoinerCallback (otError aError, void *aContext){
-
-}
 
 /**************************************************************************//**
  * Application Init.
@@ -162,14 +161,14 @@ void JoinerCallback (otError aError, void *aContext){
 void app_init(void)
 {
     OT_SETUP_RESET_JUMP(argv);
-    //setNetworkConfiguration();
+
     initUdp();
     SysTick_Config(CMU_ClockFreqGet( cmuClock_CORE )/1000);
 
-
     assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
-    assert(otJoinerStart(sInstance,"J01NU5", NULL, NULL, NULL, NULL, NULL,JoinerCallback,NULL) == OT_ERROR_NONE);
-    //assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
+
+    assert(otJoinerStart(sInstance,"J01NU5", NULL, NULL, NULL, NULL, NULL,NULL,NULL) == OT_ERROR_NONE);
+
 }
 
 /**************************************************************************//**
@@ -179,15 +178,36 @@ void app_process_action(void)
 {
     otTaskletsProcess(sInstance);
     otSysProcessDrivers(sInstance);
+
+    // Start Thread after joined to network
     if(otJoinerGetState(sInstance) == OT_JOINER_STATE_JOINED && thread_st == false){
         assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
         thread_st = true;
     }
 
-    if (msTickCount > 10000 && identified == false && get_dev_state() != 'D'){
+    // First Identification and start Commissioner
+    if ((msTickCount - identify_time)> 20000 && identified == false && get_dev_state() != 'D'){
         identify_request();
-        msTickCount = 0;
+        identify_time = msTickCount;
+        otCommissionerStart(sInstance, NULL, NULL, NULL);
     }
+
+    // Update identification info if something changed
+    if((msTickCount - identify_time)> 20000 && send_dev_info_correct() == false && identified == true){
+        identify_request();
+        identify_time = msTickCount;
+    }
+
+    // Start adding Joiner with the press of a button
+    if (sButtonPressed)
+        {
+            sButtonPressed = false;
+            if(otCommissionerGetState(sInstance) == OT_COMMISSIONER_STATE_ACTIVE){
+                otCommissionerAddJoiner(sInstance, NULL, COMMISSIONER_PSKd, COMMISSIONER_TIMEOUT);
+            }else{
+                otCliOutputFormat("Commissioner is not active\n");
+            }
+        }
 
 }
 

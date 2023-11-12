@@ -22,3 +22,13 @@ External Device:
 - dodanie testów rssi_test(), thr_test() (app_function.c / app_function.h)
 - dodanie struktur danych dla RSSI, Ton, Throughput (amcom_packets.h)
 - dodanie wywyołania dla testów RSSI, Throughput (main.c)
+
+**Aktualizacja 12.11.2023**
+
+Internal Device:
+- poprawione dołączanie do sieci (Joiner, Commissioner) (app.c)
+- poprawienie procesu identyfikacji (app_function.c / app_function.h)
+- Dodanie komentarzy (all)
+
+External Device:
+- poprawienie procesu identyfikacji (app_function.c / app_function.h)

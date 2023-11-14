@@ -12,7 +12,8 @@
 // Maximum length of IPv6 address
 #define AMCOM_MAX_ADDRESS_LEN  40
 // Main application IPv6 address
-#define APPLICATION_ADDR "fd11:1111:1122:2222:c99e:51b2:2265:51db"
+//#define APPLICATION_ADDR "fd11:1111:1122:2222:c99e:51b2:2265:51db"
+#define APPLICATION_ADDR "2a02:a31a:a137:8680:33fe:ac5a:3d62:b044"
 
 
 
@@ -102,7 +103,7 @@ typedef struct AMPACKED {
 } AMCOM_TON_RequestPayload;
 
 typedef struct AMPACKED {
-  int time_on;
+  uint16_t time_on;
 } AMCOM_TON_ResponsePayload;
 
 typedef struct AMPACKED {

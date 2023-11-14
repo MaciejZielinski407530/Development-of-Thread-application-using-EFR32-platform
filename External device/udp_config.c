@@ -18,7 +18,7 @@
 static int send_sock;
 static struct sockaddr_in6 send_appAddr;
 
-
+/// Thread to listen on receive port
 void *recv_function(void *arg){
     int recv_sock;
     struct sockaddr_in6 recv_appAddr, recv_clientAddr;
@@ -40,7 +40,6 @@ void *recv_function(void *arg){
     recv_appAddr.sin6_port = htons(RecvPORT);
     recv_appAddr.sin6_addr = in6addr_any;
     
-    // Bindowanie gniazda do określonego portu
     if (bind(recv_sock, (struct sockaddr *)&recv_appAddr, sizeof(recv_appAddr)) < 0) {
         perror("Błąd podczas bindowania gniazda");
         exit(1);
@@ -60,7 +59,7 @@ void *recv_function(void *arg){
     pthread_exit(NULL);
 }
 
- 
+/// Initialization socket to sending UDP messages
 void initUdp(void)
 {
     send_sock = socket(AF_INET6, SOCK_DGRAM, 0);
@@ -74,14 +73,13 @@ void initUdp(void)
     send_appAddr.sin6_port = htons(SendPORT);
     send_appAddr.sin6_addr = in6addr_any;
  
-    // Bindowanie gniazda do określonego portu
     if (bind(send_sock, (struct sockaddr *)&send_appAddr, sizeof(send_appAddr)) < 0) {
         perror("Błąd podczas bindowania gniazda");
         exit(1);
     }
 }
  
- 
+/// Function to sending UDP message
   void UDPsend (uint8_t* buf[AMCOM_MAX_PACKET_SIZE], const char* send_addr){
      
     struct sockaddr_in6 clientAddr; 

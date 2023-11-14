@@ -24,10 +24,12 @@ static AMCOM_PDR_ResponsePayload pdr_response;
 static AMCOM_THROUGHPUT_StartPayload thr_start;
 static AMCOM_THROUGHPUT_ResponsePayload thr_response;
 
+static  AMCOM_TON_ResponsePayload ton_response;
 
 bool  identified = false;
 int   timestamp = 0;
 bool  send_thr = false;
+
 
 // Handling AMCOM Packets
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
@@ -118,6 +120,15 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_RSSI_RESPONSE:
               break;
       case AMCOM_TON_REQUEST:
+              ton_response.time_on = getJoinTime();
+              bytesToSend = AMCOM_Serialize(AMCOM_TON_RESPONSE, &ton_response, sizeof(ton_response), amcomBuf);
+
+              // Sending Ton Response
+              if (bytesToSend > 0) {
+                  UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
+                  otCliOutputFormat("Wysylam rssi response");
+              }
+
               break;
       case AMCOM_TON_RESPONSE:
               break;

@@ -90,6 +90,18 @@ int main(void){
             continue;
         }
 
+        // Start Ton test
+        if(sscanf(buff, "%s %s\n", test_name, device_name) == 2 && strcmp(test_name,"TON")==0 ){
+            printf("Wybrano Test TON \n");
+            int it = find_dev(device_name);
+            if(it >= 0 ){
+                ton_test(it);
+            } else{
+                printf("Urzadzenie o podanej nazwie nie istnieje\n");
+            }
+            continue;
+        }
+
                 
         printf("Bledny wybor\n");
                 

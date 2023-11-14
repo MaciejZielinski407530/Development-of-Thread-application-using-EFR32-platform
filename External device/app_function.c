@@ -40,13 +40,11 @@ static struct timeval rtt_start, rtt_stop;
 //static AMCOM_THROUGHPUT_StartPayload thr_start;
 static AMCOM_THROUGHPUT_ResponsePayload thr_response;
 
-static uint16_t number_of_packets_64 [] = {181, 362, 543, 725, 906, 1087, 1268, 1449, 1630, 1812, 1993};
-uint8_t tab [] = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};               // Packet Size = 64B + 5B = 69B
 
 // Function to find application IPv6 address
 void search_addr(void);
 
- 
+/// AMCOM packet handler handling receive packets 
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
@@ -136,6 +134,8 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_TON_REQUEST:
               break;
       case AMCOM_TON_RESPONSE:
+              printf("Ton = %d [ms]\n",packet->payload[0]|packet->payload[1]<<8);
+
               break;
       case AMCOM_THROUGHPUT_START:
               break;        
@@ -176,7 +176,7 @@ void search_addr(void){
  
     freeifaddrs(ifaddr);
 }
- 
+/// Function to trigger PDR test
 void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
@@ -212,6 +212,7 @@ void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
                }
 }
 
+/// Function to trigger RTT test
 void rtt_test(const int n_tests, const int n_packets,const int dev_iterator){
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
@@ -237,7 +238,7 @@ void rtt_test(const int n_tests, const int n_packets,const int dev_iterator){
         
         
 }
-
+/// Function to trigger RSSI test
 void rssi_test(const int n_tests, const int n_packets,const int dev_iterator){
         AMCOM_RSSI_RequestPayload rssi_request;
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
@@ -257,45 +258,87 @@ void rssi_test(const int n_tests, const int n_packets,const int dev_iterator){
             }
 
         }
-
-
-
 }
 
+/// Function to trigger Throughput test
 void thr_test(const int packet_size, const int dev_iterator){
-        uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
-        size_t bytesToSend = 0;
-        AMCOM_THROUGHPUT_StartPayload thr_start;
-        AMCOM_THROUGHPUT_RequestMinPayload thr_request;
-        thr_start.expect_packet_size = packet_size;
+        uint16_t number_of_packets_64 [] = {181, 362, 543, 725, 906, 1087, 1268, 1449, 1630, 1812, 1993};
+        uint16_t number_of_packets_128 [] = {94, 188, 282, 376, 470, 464, 658, 752, 846, 940, 1034};
+        uint16_t number_of_packets_200 [] = {61, 122, 183, 244, 305, 366, 427, 488, 549, 610, 671};
+        size_t num_size = sizeof(number_of_packets_64)/sizeof(number_of_packets_64[0]);
 
-        memcpy(thr_request.payload, tab, sizeof(thr_request.payload));
-        for(int n = 0; n < sizeof(number_of_packets_64)/sizeof(number_of_packets_64[0]); n++){
+        AMCOM_THROUGHPUT_StartPayload thr_start;
+
+        AMCOM_THROUGHPUT_RequestMinPayload thr_request_min;
+        AMCOM_THROUGHPUT_RequestMidPayload thr_request_mid;
+        AMCOM_THROUGHPUT_RequestMaxPayload thr_request_max;
+
+        if (packet_size == THROUGHPUT_MIN_PAYLOAD){
+            thr_start.expect_packet_size = packet_size;
+            for(uint8_t i = 0; i < THROUGHPUT_MIN_PAYLOAD; i++){
+                thr_request_min.payload[i] = i;
+            }
+            send_thr(number_of_packets_64, num_size, &thr_start, &thr_request_min, dev_iterator);
+        }
+        if (packet_size == THROUGHPUT_MID_PAYLOAD){
+            thr_start.expect_packet_size = packet_size;
+            for(uint8_t i = 0; i < THROUGHPUT_MID_PAYLOAD; i++){
+                thr_request_mid.payload[i] = i;
+            }
+            send_thr(number_of_packets_128, num_size, &thr_start, &thr_request_mid, dev_iterator);
+        }
+        if (packet_size == THROUGHPUT_MAX_PAYLOAD){
+            thr_start.expect_packet_size = packet_size;
+            for(uint8_t i = 0; i < THROUGHPUT_MAX_PAYLOAD; i++){
+                thr_request_max.payload[i] = i;
+            }
+            send_thr(number_of_packets_200, num_size, &thr_start, &thr_request_max, dev_iterator);
+        }
+
+}
+/// Function to sending throughput packets from thr_test()
+void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_start, const void *thr_req, const int dev_iterator){
+    uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
+    size_t bytesToSend = 0;
+    printf("Rozmiar %d\n", sizeof(number_of_packets));
+
+    for(int n = 0; n < num_size; n++){
         
-            thr_start.expect_packets = number_of_packets_64[n];
-            bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_START, &thr_start, sizeof(thr_start), amcomBuf);
+            ((AMCOM_THROUGHPUT_StartPayload*) thr_start)->expect_packets = number_of_packets[n];
+            bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_START, thr_start, sizeof(thr_start), amcomBuf);
             
             if (bytesToSend > 0) {
                 UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
                 printf("I sent start\n");
-            }
-        
+            } 
           
-            for (int i=0; i < number_of_packets_64[n]; i++){
-                usleep(1000000*10/number_of_packets_64[n]);
+            for (int i=0; i < number_of_packets[n]; i++){
+                usleep(1000000*10/number_of_packets[n]);
                 
-                bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_REQUEST, &thr_request, sizeof(thr_request), amcomBuf);
+                bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_REQUEST, thr_req, sizeof(thr_req), amcomBuf);
                 if (bytesToSend > 0) {
                     UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
                     printf("I sent thr %d \n",i);
                     }
-                
+               
             }
             sleep(15);
         }
+}
+
+/// Function to trigger Ton test
+void ton_test(const int dev_iterator){
+    uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
+    size_t bytesToSend = 0;
+    bytesToSend = AMCOM_Serialize(AMCOM_TON_REQUEST, NULL, 0, amcomBuf);
+    if (bytesToSend > 0) {
+        UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
+        printf("I sent ton \n");
+    }
 
 }
 
+/// Print Thread device connected to application
 void dev_list(void){
     printf("Connected Device List: \n");
     for(int i = 0; i < AMCOM_MAX_NEIGHBOR; i++){
@@ -304,6 +347,7 @@ void dev_list(void){
     }
 }
 
+/// Function finding device number in list of connected device
 int find_dev (const char* name){
     for(int i = 0; i < AMCOM_MAX_NEIGHBOR; i++){
         if(strcmp(id_request[i].deviceName, name) == 0)

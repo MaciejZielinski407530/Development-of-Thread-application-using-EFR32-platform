@@ -18,6 +18,9 @@
 // Maximum length of IPv6 address
 #define AMCOM_MAX_ADDRESS_LEN  40
 
+#define THROUGHPUT_MIN_PAYLOAD 64
+#define THROUGHPUT_MID_PAYLOAD 128
+#define THROUGHPUT_MAX_PAYLOAD 200
  
  
  
@@ -117,7 +120,7 @@ typedef struct AMPACKED {
 } AMCOM_TON_RequestPayload;
  
 typedef struct AMPACKED {
-  int time_on;
+  uint16_t time_on;
 } AMCOM_TON_ResponsePayload;
  
 typedef struct AMPACKED {

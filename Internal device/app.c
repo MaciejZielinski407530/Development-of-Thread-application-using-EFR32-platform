@@ -55,6 +55,7 @@ extern void otAppCliInit(otInstance *aInstance);
 
 volatile int msTickCount;
 static int             identify_time;
+static uint16_t             join_time;
 static otInstance *    sInstance       = NULL;
 static bool            sButtonPressed  = false;
 static bool            sStayAwake      = true;
@@ -70,6 +71,10 @@ void SysTick_Handler(void){
 
 int getSysTick_time(void){
   return msTickCount;
+}
+
+uint16_t getJoinTime(void){
+  return join_time;
 }
 
 otInstance *otGetInstance(void)
@@ -183,6 +188,7 @@ void app_process_action(void)
     if(otJoinerGetState(sInstance) == OT_JOINER_STATE_JOINED && thread_st == false){
         assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
         thread_st = true;
+        join_time = (uint16_t) msTickCount;
     }
 
     // First Identification and start Commissioner

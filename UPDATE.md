@@ -32,3 +32,14 @@ Internal Device:
 
 External Device:
 - poprawienie procesu identyfikacji (app_function.c / app_function.h)
+
+**Aktualizacja 14.11.2023**
+
+Internal Device:
+- Dodanie pomiar czasu Ton (app.c)
+- Obsługa testu Ton (app_function.c / app_function.h)
+
+External Device:
+- poprawa testu thr_test() (app_function.c / app_function.h)
+- dodanie testu Ton (app_function.c / app_function.h)
+- dodanie komentarzy (all)

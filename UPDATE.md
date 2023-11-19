@@ -43,3 +43,9 @@ External Device:
 - poprawa testu thr_test() (app_function.c / app_function.h)
 - dodanie testu Ton (app_function.c / app_function.h)
 - dodanie komentarzy (all)
+
+**Aktualizacja 19.11.2023**
+
+External Device:
+- sprawdzanie podanych argumentow czy są w odpowiednim przedziale (main.c)
+- uporządkowanie deklaracji zmiennych (app_function.c / amcom_packets.h)

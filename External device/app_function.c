@@ -22,24 +22,13 @@
 static AMCOM_IdentifyRequestPayload id_request[AMCOM_MAX_NEIGHBOR];
 static AMCOM_IdentifyResponsePayload id_response;
  
-static AMCOM_RTT_RequestPayload rtt_request;
-static AMCOM_RTT_ResponsePayload rtt_response;
-
- 
 static AMCOM_PDR_StartPayload pdr_start;
 static AMCOM_PDR_StopPayload pdr_stop;
-static AMCOM_PDR_RequestPayload pdr_request;
 static AMCOM_PDR_ResponsePayload pdr_response;
- 
-static AMCOM_RSSI_ResponsePayload rssi_response;
 
 static RTT_INFO rtt_information [AMCOM_MAX_RTT_TEST];
 
 static struct timeval rtt_start, rtt_stop;
-
-//static AMCOM_THROUGHPUT_StartPayload thr_start;
-static AMCOM_THROUGHPUT_ResponsePayload thr_response;
-
 
 // Function to find application IPv6 address
 void search_addr(void);
@@ -121,8 +110,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
             for(size_t i = 0; i <= pdr_stop.perform_tests; i++){
                   pdr_response.recv_packets[i] = packet->payload[m]| packet->payload[m+1]<<8;
                   m+=2;
-                  printf("Test: %d Recv packets: %d All packets: %d \n", i+1, pdr_response.recv_packets[i], pdr_start.expect_packets);
- 
+                  printf("Test: %d Recv packets: %d All packets: %d \n", i+1, pdr_response.recv_packets[i], pdr_start.expect_packets); 
               }
  
               break;
@@ -142,9 +130,10 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_THROUGHPUT_REQUEST:
               break;
       case AMCOM_THROUGHPUT_RESPONSE:
-              thr_response.recv_packets =  packet->payload[0] | packet->payload[1]<<8;
-              printf("Recv pack %d", thr_response.recv_packets);
-              break;
+            static AMCOM_THROUGHPUT_ResponsePayload thr_response;
+            thr_response.recv_packets =  packet->payload[0] | packet->payload[1]<<8;
+            printf("Recv pack %d", thr_response.recv_packets);
+            break;
       default:
         break;
     }
@@ -178,6 +167,9 @@ void search_addr(void){
 }
 /// Function to trigger PDR test
 void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
+        
+        static AMCOM_PDR_RequestPayload pdr_request;
+        
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
         pdr_start.expect_packets = n_packets;
@@ -214,6 +206,7 @@ void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
 
 /// Function to trigger RTT test
 void rtt_test(const int n_tests, const int n_packets,const int dev_iterator){
+        static AMCOM_RTT_RequestPayload rtt_request;
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
         
@@ -240,7 +233,7 @@ void rtt_test(const int n_tests, const int n_packets,const int dev_iterator){
 }
 /// Function to trigger RSSI test
 void rssi_test(const int n_tests, const int n_packets,const int dev_iterator){
-        AMCOM_RSSI_RequestPayload rssi_request;
+        static AMCOM_RSSI_RequestPayload rssi_request;
         uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
         size_t bytesToSend = 0;
         

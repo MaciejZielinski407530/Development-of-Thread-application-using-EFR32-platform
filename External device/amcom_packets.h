@@ -9,17 +9,26 @@
 #define AMCOM_MAX_DEVICE_NAME_LEN 10
 // Maximum number of PDR test
 #define AMCOM_MAX_PDR_TEST  10
+// Maximum number of PDR packets per test
+#define AMCOM_MAX_PDR_PACKET  1000
 // Maximum number of RTT test
 #define AMCOM_MAX_RTT_TEST 10
-// Maximum number of RTT packets
+// Maximum number of RTT packets per test
 #define AMCOM_MAX_RTT_PACKET 10
+// Maximum number of RSSI test
+#define AMCOM_MAX_RSSI_TEST 10
+// Maximum number of RSSI packets per test
+#define AMCOM_MAX_RSSI_PACKET 10
 // Maximum number of connected device
 #define AMCOM_MAX_NEIGHBOR  10
 // Maximum length of IPv6 address
 #define AMCOM_MAX_ADDRESS_LEN  40
 
+// Payload size of Throughput packet min + 5 
 #define THROUGHPUT_MIN_PAYLOAD 64
+// Payload size of Throughput packet mid + 5
 #define THROUGHPUT_MID_PAYLOAD 128
+// Payload size of Throughput packet max + 5
 #define THROUGHPUT_MAX_PAYLOAD 200
  
  
@@ -129,15 +138,15 @@ typedef struct AMPACKED {
 } AMCOM_THROUGHPUT_StartPayload;
  
 typedef struct AMPACKED {
-  uint8_t payload [64];
+  uint8_t payload [THROUGHPUT_MIN_PAYLOAD];
 } AMCOM_THROUGHPUT_RequestMinPayload;
  
 typedef struct AMPACKED {
-  uint8_t payload [128];              // Packet Size = 128B + 5B = 133B
+  uint8_t payload [THROUGHPUT_MID_PAYLOAD];              // Packet Size = 128B + 5B = 133B
 } AMCOM_THROUGHPUT_RequestMidPayload;
  
 typedef struct AMPACKED {
-  uint8_t payload [200];              // Packet Size = 200B + 5B = 205B  -> Max AMCOM packet size
+  uint8_t payload [THROUGHPUT_MAX_PAYLOAD];              // Packet Size = 200B + 5B = 205B  -> Max AMCOM packet size
 } AMCOM_THROUGHPUT_RequestMaxPayload;
  
 typedef struct AMPACKED {

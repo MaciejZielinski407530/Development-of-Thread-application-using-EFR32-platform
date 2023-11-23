@@ -29,7 +29,7 @@
 
 otInstance *otGetInstance(void);
 void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
-extern void otSysEventSignalPending(void);
+
 
 static otUdpSocket RecvSocket;
 static int8_t rssi;
@@ -68,7 +68,7 @@ void initUdp(void)
 }
 
 /// UDP sending function
-void UDPsend (uint8_t* buf[AMCOM_MAX_PACKET_SIZE], size_t* bytesToSend, const char* send_addr){
+void UDPsend (uint8_t buf[AMCOM_MAX_PACKET_SIZE], size_t bytesToSend, const char* send_addr){
       otMessageInfo    messageInfo;
       otMessage       *message = NULL;
       otIp6Address     send_address;
@@ -100,8 +100,7 @@ void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *a
       OT_UNUSED_VARIABLE(aContext);
       OT_UNUSED_VARIABLE(aMessageInfo);
 
-      otMessageInfo    messageInfo;
-      otMessage        *message = NULL;
+
       otIp6Address     RecvAddress;                               // Na koniec do usuniecia
       static AMCOM_Receiver amcomReceiver;                // AMCOM receiver structure
       static char      buf [AMCOM_MAX_PACKET_SIZE];       // Buffer for received data
@@ -124,8 +123,6 @@ void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *a
 
       // Deserialization of received data
       AMCOM_Deserialize(&amcomReceiver, buf, receivedBytesCount);
-
-      message = NULL;
 
 
 }

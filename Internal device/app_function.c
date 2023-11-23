@@ -6,12 +6,13 @@
 #include <string.h>
 #include <stdint.h>
 #include <openthread/udp.h>
-
+#include <openthread/cli.h>
 #include <openthread/thread.h>
 
 otInstance *otGetInstance(void);
 int8_t get_rssi(void);
-void UDPsend (uint8_t* buf[AMCOM_MAX_PACKET_SIZE], size_t* bytesToSend, const char* send_addr);
+void UDPsend (uint8_t buf[AMCOM_MAX_PACKET_SIZE], size_t bytesToSend, const char* send_addr);
+uint16_t getJoinTime(void);
 
 static AMCOM_IdentifyRequestPayload id_request;
 static AMCOM_IdentifyResponsePayload id_response;
@@ -60,7 +61,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_RTT_REQUEST:
               otCliOutputFormat("Otrzymalem rtt req\n");
               AMCOM_RTT_ResponsePayload rtt_response;
-
+              sprintf(rtt_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
               rtt_response.test_number = packet->payload[0];
               rtt_response.packet_nunmber = packet->payload[1]|packet->payload[2]<<8;
               bytesToSend = AMCOM_Serialize(AMCOM_RTT_RESPONSE, &rtt_response, sizeof(rtt_response), amcomBuf);
@@ -85,6 +86,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
 
               break;
       case AMCOM_PDR_STOP:
+        sprintf(pdr_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
             bytesToSend = AMCOM_Serialize(AMCOM_PDR_RESPONSE, &pdr_response, sizeof(pdr_response), amcomBuf);
 
             for(int i = 0; i<pdr_start.expect_tests;i++){
@@ -98,13 +100,14 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
             }
               break;
       case AMCOM_PDR_REQUEST:
+
               pdr_response.recv_packets[packet->payload[0]]++;
               otCliOutputFormat("%d \n",packet->payload[1]|packet->payload[2]<<8);
               break;
       case AMCOM_PDR_RESPONSE:
               break;
       case AMCOM_RSSI_REQUEST:
-
+              sprintf(rssi_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
               rssi_response.test_number = packet->payload[0];
               rssi_response.packet_number = packet->payload[1]|packet->payload[2]<<8;
               rssi_response.rssi = get_rssi();
@@ -120,6 +123,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_RSSI_RESPONSE:
               break;
       case AMCOM_TON_REQUEST:
+              sprintf(ton_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
               ton_response.time_on = getJoinTime();
               bytesToSend = AMCOM_Serialize(AMCOM_TON_RESPONSE, &ton_response, sizeof(ton_response), amcomBuf);
 
@@ -139,9 +143,12 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               send_thr = false;
               break;
       case AMCOM_THROUGHPUT_REQUEST:
+              /*
               if(timestamp==0)
                 timestamp = getSysTick_time();
+              */
               thr_response.recv_packets++;
+              /*
               if(getSysTick_time()-timestamp >= 10000 && send_thr == false){
                     bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_RESPONSE, &thr_response, sizeof(thr_response), amcomBuf);
                     send_thr = true;
@@ -150,9 +157,18 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
                        otCliOutputFormat("Wysylam thr response %d recv\n",thr_response.recv_packets );
                     }
               }
-
+              */
               break;
       case AMCOM_THROUGHPUT_RESPONSE:
+              break;
+      case AMCOM_THROUGHPUT_STOP:
+              sprintf(thr_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
+              bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_RESPONSE, &thr_response, sizeof(thr_response), amcomBuf);
+
+              if (bytesToSend > 0) {
+                  UDPsend(amcomBuf, bytesToSend, id_response.deviceAddr);
+                  otCliOutputFormat("Wysylam thr response %d recv\n",thr_response.recv_packets );
+             }
               break;
       default:
         break;
@@ -181,9 +197,9 @@ void identify_request(void){
   static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
   size_t bytesToSend = 0;
 
-  sprintf(id_request.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()) );
+  sprintf(id_request.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
 
-  otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
+  const otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
   while(address->mNext !=NULL){
       if (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC){
           otIp6AddressToString(&(address->mAddress), id_request.deviceAddr, AMCOM_MAX_ADDRESS_LEN);
@@ -208,7 +224,7 @@ bool send_dev_info_correct(void){
   char deviceAddr[AMCOM_MAX_ADDRESS_LEN];
   sprintf(deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()) );
 
-  otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
+  const otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
   while(address->mNext !=NULL){
       if (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC){
           otIp6AddressToString(&(address->mAddress), deviceAddr, AMCOM_MAX_ADDRESS_LEN);

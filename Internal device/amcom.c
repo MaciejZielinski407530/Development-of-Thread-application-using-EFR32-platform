@@ -27,7 +27,6 @@ void AMCOM_InitReceiver(AMCOM_Receiver* receiver, AMCOM_PacketHandler packetHand
 
 size_t AMCOM_Serialize(uint8_t packetType, const void* payload, size_t payloadSize, uint8_t* destinationBuffer) {
     assert(packetType);
-    assert(payloadSize >= 0);
     assert(destinationBuffer);
     size_t i;
     destinationBuffer[0] = AMCOM_SOP;     // First byte   SOP
@@ -59,7 +58,6 @@ size_t AMCOM_Serialize(uint8_t packetType, const void* payload, size_t payloadSi
 
 void AMCOM_Deserialize(AMCOM_Receiver* receiver, const void* data, size_t dataSize) {
     assert(receiver);
-    assert(dataSize >= 0);
 
     for (size_t i = 0; i < dataSize; i++) {
         // Stan EMPTY - odebrano SOP

@@ -12,8 +12,10 @@
 // Maximum length of IPv6 address
 #define AMCOM_MAX_ADDRESS_LEN  40
 // Main application IPv6 address
+//#define APPLICATION_ADDR "fd11:1111:1122:2222:bc3f:2f4a:abaa:b460"
+#define APPLICATION_ADDR "fd11:1111:1122:2222:9133:c65d:5301:132e"
 //#define APPLICATION_ADDR "fd11:1111:1122:2222:c99e:51b2:2265:51db"
-#define APPLICATION_ADDR "2a02:a31a:a137:8680:33fe:ac5a:3d62:b044"
+//#define APPLICATION_ADDR "2a02:a31a:a137:8680:33fe:ac5a:3d62:b044"
 
 
 
@@ -40,6 +42,7 @@ typedef enum {
   AMCOM_THROUGHPUT_START = 13,      // Throughput
   AMCOM_THROUGHPUT_REQUEST = 14,
   AMCOM_THROUGHPUT_RESPONSE = 15,
+  AMCOM_THROUGHPUT_STOP = 16,
 
 
 } AMCOM_PacketType;
@@ -64,6 +67,7 @@ typedef struct AMPACKED {
 } AMCOM_RTT_RequestPayload;
 
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint8_t test_number;
   uint16_t packet_nunmber;
 } AMCOM_RTT_ResponsePayload;
@@ -83,6 +87,7 @@ typedef struct AMPACKED {
 } AMCOM_PDR_RequestPayload;
 
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint16_t recv_packets[AMCOM_MAX_PDR_TEST];
 } AMCOM_PDR_ResponsePayload;
 
@@ -92,6 +97,7 @@ typedef struct AMPACKED {
 } AMCOM_RSSI_RequestPayload;
 
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint8_t test_number;
   uint16_t packet_number;
   int8_t rssi;
@@ -103,6 +109,7 @@ typedef struct AMPACKED {
 } AMCOM_TON_RequestPayload;
 
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint16_t time_on;
 } AMCOM_TON_ResponsePayload;
 
@@ -125,6 +132,7 @@ typedef struct AMPACKED {
 
 typedef struct AMPACKED {
   //uint16_t packet_size;
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint16_t recv_packets;
 } AMCOM_THROUGHPUT_ResponsePayload;
 

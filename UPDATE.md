@@ -53,10 +53,10 @@ External Device:
 **Aktualizacja 23.11.2023**
 
 Internal Device:
-- usunięcie Warnignów
+- oczyszczenie kodu
 - poprawa struktur dla pakietów amcom_packets.h
 
 External Device:
-- usunięcie Warnignów
+- oczyszczenie kodu
 - poprawa struktur dla pakietów amcom_packets.h
 - dodanie zapisu wyników do pliku csv (app_function.c)

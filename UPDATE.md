@@ -49,3 +49,14 @@ External Device:
 External Device:
 - sprawdzanie podanych argumentow czy są w odpowiednim przedziale (main.c)
 - uporządkowanie deklaracji zmiennych (app_function.c / amcom_packets.h)
+
+**Aktualizacja 23.11.2023**
+
+Internal Device:
+- usunięcie Warnignów
+- poprawa struktur dla pakietów amcom_packets.h
+
+External Device:
+- usunięcie Warnignów
+- poprawa struktur dla pakietów amcom_packets.h
+- dodanie zapisu wyników do pliku csv (app_function.c)

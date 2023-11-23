@@ -17,8 +17,10 @@
 // Define device name
 #define DEVICE_NAME "0x0000"
 
-#define RT rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8]
- 
+//#define RT rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8]
+ #define RT rtt_information[packet->payload[AMCOM_MAX_DEVICE_NAME_LEN]].rtt_info_time[packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+1]|packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+2]<<8]
+void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_start, const void *thr_req, const int dev_iterator);
+void file_writer(const char* filename, const char* text);
 static AMCOM_IdentifyRequestPayload id_request[AMCOM_MAX_NEIGHBOR];
 static AMCOM_IdentifyResponsePayload id_response;
  
@@ -37,7 +39,7 @@ void search_addr(void);
 void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
     static uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
-    
+    char results[60];
  
     switch (packet->header.type) {
       case AMCOM_IDENTIFY_REQUEST:
@@ -92,12 +94,19 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               break;
       case AMCOM_RTT_REQUEST:
               break;
-      case AMCOM_RTT_RESPONSE:              
+      case AMCOM_RTT_RESPONSE:
+            static AMCOM_RTT_ResponsePayload rtt_response;
+
             gettimeofday(&RT.stop, NULL);
-            
+            for(int i = 0; i < AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                rtt_response.deviceName [i] = packet->payload[i];
+            }
+            rtt_response.test_number = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN];
+            rtt_response.packet_number = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+1]|packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+2]<<8;
             //printf("STOP Test: %d, Pakiet: %d, Czas: %lld ",packet->payload[0],packet->payload[1]|packet->payload[2]<<8, (long long int)(rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_sec * 1000000 + rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_usec));
             printf(" Czas rtt : %lld us\n", (long long int) (RT.stop.tv_sec - RT.start.tv_sec)*1000000+(RT.stop.tv_usec-RT.start.tv_usec));
-
+            sprintf(results, "RTT,%d,%d,%lld",rtt_response.test_number,rtt_response.packet_number,(long long int) (RT.stop.tv_sec - RT.start.tv_sec)*1000000+(RT.stop.tv_usec-RT.start.tv_usec));
+            file_writer(rtt_response.deviceName, results); 
               break;
       case AMCOM_PDR_START:
               break;
@@ -106,24 +115,44 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_PDR_REQUEST:
               break;
       case AMCOM_PDR_RESPONSE:
-            size_t m =0;
-            for(size_t i = 0; i < pdr_stop.perform_tests; i++){
+            size_t m =AMCOM_MAX_DEVICE_NAME_LEN;
+            for(int i = 0; i < AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                pdr_response.deviceName [i] = packet->payload[i];
+            }
+            for(size_t i = AMCOM_MAX_DEVICE_NAME_LEN; i < (pdr_stop.perform_tests+AMCOM_MAX_DEVICE_NAME_LEN); i++){
                   pdr_response.recv_packets[i] = packet->payload[m]| packet->payload[m+1]<<8;
                   m+=2;
-                  printf("Test: %d Recv packets: %d All packets: %d \n", i+1, pdr_response.recv_packets[i], pdr_start.expect_packets); 
-              }
+                  printf("Test: %ld Recv packets: %d All packets: %d \n", (i+1-AMCOM_MAX_DEVICE_NAME_LEN), pdr_response.recv_packets[i], pdr_start.expect_packets); 
+                  sprintf(results, "PDR,%ld,%d,%d",(i+1-AMCOM_MAX_DEVICE_NAME_LEN), pdr_response.recv_packets[i], pdr_start.expect_packets);
+                  file_writer(pdr_response.deviceName, results);    
+            }
  
               break;
       case AMCOM_RSSI_REQUEST:
               break;
-      case AMCOM_RSSI_RESPONSE:
-              printf("Rssi dla test %d pakiet: %d RSSI = %d\n",packet->payload[0], packet->payload[1]|packet->payload[2]<<8, packet->payload[3]);
+      case AMCOM_RSSI_RESPONSE:               
+              static AMCOM_RSSI_ResponsePayload rssi_response;
+              for(int i = 0; i < AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                rssi_response.deviceName [i] = packet->payload[i];
+              }
+              rssi_response.test_number = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN];
+              rssi_response.packet_number = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+1]|packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+2]<<8;
+              rssi_response.rssi = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+3];
+              printf("Rssi dla test %d pakiet: %d RSSI = %d [dBm]\n",rssi_response.test_number, rssi_response.packet_number, rssi_response.rssi);
+              sprintf(results, "Rssi,%d,%d,%d",rssi_response.test_number, rssi_response.packet_number, rssi_response.rssi);
+              file_writer(rssi_response.deviceName,results);
               break;
       case AMCOM_TON_REQUEST:
               break;
       case AMCOM_TON_RESPONSE:
-              printf("Ton = %d [ms]\n",packet->payload[0]|packet->payload[1]<<8);
-
+              static AMCOM_TON_ResponsePayload ton_response;
+              for(int i = 0; i < AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                ton_response.deviceName [i] = packet->payload[i];
+              }
+              ton_response.time_on = packet->payload[AMCOM_MAX_DEVICE_NAME_LEN]|packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+1]<<8;
+              printf("Ton = %d [ms]\n",ton_response.time_on);
+              sprintf(results, "Ton,%d",ton_response.time_on);
+              file_writer(ton_response.deviceName, results);
               break;
       case AMCOM_THROUGHPUT_START:
               break;        
@@ -131,14 +160,29 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               break;
       case AMCOM_THROUGHPUT_RESPONSE:
             static AMCOM_THROUGHPUT_ResponsePayload thr_response;
-            thr_response.recv_packets =  packet->payload[0] | packet->payload[1]<<8;
+            for(int i = 0; i < AMCOM_MAX_DEVICE_NAME_LEN; i++){
+                thr_response.deviceName [i] = packet->payload[i];
+            }
+            thr_response.recv_packets =  packet->payload[AMCOM_MAX_DEVICE_NAME_LEN] | packet->payload[AMCOM_MAX_DEVICE_NAME_LEN+1]<<8;
             printf("Recv pack %d\n", thr_response.recv_packets);
+            sprintf(results, "THR,%d",thr_response.recv_packets);
+            file_writer(ton_response.deviceName, results);
             break;
       case AMCOM_THROUGHPUT_STOP:
             break;
       default:
         break;
     }
+}
+
+void file_writer(const char* filename, const char* text){
+    char file_name[AMCOM_MAX_DEVICE_NAME_LEN+4];
+    FILE *file;
+    sprintf(file_name,"%s.csv",filename);
+    file = fopen(file_name, "a");
+    fseek(file, 0, SEEK_END);
+    fprintf(file, "%s\n", text );
+    fclose(file);
 }
 
 // Function to find application IPv6 address
@@ -316,7 +360,7 @@ void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_sta
                 bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_REQUEST, thr_req, sizeof(thr_req), amcomBuf);
                 if (bytesToSend > 0) {
                     UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                    printf("Sent: Test: %d/%d, Packet: %d/%d\r", n+1, num_size, i+1, number_of_packets[n]);
+                    printf("Sent: Test: %d/%ld, Packet: %d/%d\r", n+1, num_size, i+1, number_of_packets[n]);
                     fflush(stdout);
                     }
                

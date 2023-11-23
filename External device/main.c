@@ -13,7 +13,7 @@
 #define MAX_TEST_NAME_SIZE 10
 
 
-extern void recv_function(void *arg);
+extern void *recv_function(void *arg);
 
 int main(void){
     char buff[MAX_BUFFER_SIZE];
@@ -26,7 +26,7 @@ int main(void){
     initUdp();
 
     // Start receiving thread
-    if(pthread_create(&recv_thread, NULL, recv_function,NULL)){
+    if(pthread_create(&recv_thread, NULL, recv_function, NULL)){
         perror("Error creating recv thread");
         exit(1);
     }

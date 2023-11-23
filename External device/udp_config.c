@@ -80,7 +80,7 @@ void initUdp(void)
 }
  
 /// Function to sending UDP message
-  void UDPsend (uint8_t* buf[AMCOM_MAX_PACKET_SIZE], const char* send_addr){
+  void UDPsend (uint8_t buf[AMCOM_MAX_PACKET_SIZE], const char* send_addr){
      
     struct sockaddr_in6 clientAddr; 
     memset(&clientAddr, 0, sizeof(clientAddr));

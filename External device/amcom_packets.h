@@ -80,6 +80,7 @@ typedef struct AMPACKED {
 } AMCOM_RTT_RequestPayload;
  
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint8_t test_number;
   uint16_t packet_number;
 } AMCOM_RTT_ResponsePayload;
@@ -108,6 +109,7 @@ typedef struct AMPACKED {
 } AMCOM_PDR_RequestPayload;
  
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint16_t recv_packets[AMCOM_MAX_PDR_TEST];
 } AMCOM_PDR_ResponsePayload;
  
@@ -118,6 +120,7 @@ typedef struct AMPACKED {
  
  
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint8_t test_number;
   uint16_t packet_number;
   int8_t rssi;
@@ -129,6 +132,7 @@ typedef struct AMPACKED {
 } AMCOM_TON_RequestPayload;
  
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   uint16_t time_on;
 } AMCOM_TON_ResponsePayload;
  
@@ -150,6 +154,7 @@ typedef struct AMPACKED {
 } AMCOM_THROUGHPUT_RequestMaxPayload;
  
 typedef struct AMPACKED {
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
   //uint16_t packet_size;
   uint16_t recv_packets;
 } AMCOM_THROUGHPUT_ResponsePayload;

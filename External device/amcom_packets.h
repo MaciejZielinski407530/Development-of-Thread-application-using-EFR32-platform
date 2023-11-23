@@ -56,7 +56,7 @@ typedef enum {
   AMCOM_THROUGHPUT_START = 13,      // Throughput
   AMCOM_THROUGHPUT_REQUEST = 14,
   AMCOM_THROUGHPUT_RESPONSE = 15,
- 
+  AMCOM_THROUGHPUT_STOP = 16,
  
 } AMCOM_PacketType;
  

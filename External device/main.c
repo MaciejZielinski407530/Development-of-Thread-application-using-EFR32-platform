@@ -108,7 +108,7 @@ int main(void){
 
         // Start Ton test
         if(sscanf(buff, "%s %s\n", test_name, device_name) == 2 && strcmp(test_name,"TON")==0 ){
-            printf("choice: Test Ton \n");
+            printf("Choice: Test Ton \n");
             int it = find_dev(device_name);
             if(it >= 0 ){
                 ton_test(it);

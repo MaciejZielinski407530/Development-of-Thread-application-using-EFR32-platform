@@ -83,6 +83,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
 
             if (bytesToSend > 0) {
                 UDPsend(amcomBuf, id_request[n].deviceAddr);
+                printf("Identification response sent\n");
             }
 
 
@@ -94,7 +95,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_RTT_RESPONSE:              
             gettimeofday(&RT.stop, NULL);
             
-            printf("STOP Test: %d, Pakiet: %d, Czas: %lld ",packet->payload[0],packet->payload[1]|packet->payload[2]<<8, (long long int)(rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_sec * 1000000 + rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_usec));
+            //printf("STOP Test: %d, Pakiet: %d, Czas: %lld ",packet->payload[0],packet->payload[1]|packet->payload[2]<<8, (long long int)(rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_sec * 1000000 + rtt_information[packet->payload[0]].rtt_info_time[packet->payload[1]|packet->payload[2]<<8].stop.tv_usec));
             printf(" Czas rtt : %lld us\n", (long long int) (RT.stop.tv_sec - RT.start.tv_sec)*1000000+(RT.stop.tv_usec-RT.start.tv_usec));
 
               break;
@@ -105,9 +106,8 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_PDR_REQUEST:
               break;
       case AMCOM_PDR_RESPONSE:
-            printf("Odebrane pdr response\n");
             size_t m =0;
-            for(size_t i = 0; i <= pdr_stop.perform_tests; i++){
+            for(size_t i = 0; i < pdr_stop.perform_tests; i++){
                   pdr_response.recv_packets[i] = packet->payload[m]| packet->payload[m+1]<<8;
                   m+=2;
                   printf("Test: %d Recv packets: %d All packets: %d \n", i+1, pdr_response.recv_packets[i], pdr_start.expect_packets); 
@@ -132,7 +132,9 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_THROUGHPUT_RESPONSE:
             static AMCOM_THROUGHPUT_ResponsePayload thr_response;
             thr_response.recv_packets =  packet->payload[0] | packet->payload[1]<<8;
-            printf("Recv pack %d", thr_response.recv_packets);
+            printf("Recv pack %d\n", thr_response.recv_packets);
+            break;
+      case AMCOM_THROUGHPUT_STOP:
             break;
       default:
         break;
@@ -178,7 +180,7 @@ void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
 
              if (bytesToSend > 0) {
                  UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                 printf("I sent start\n");
+                 printf("PDR start\n");
                }
           
         for(int n = 0; n < n_tests; n++){
@@ -190,17 +192,20 @@ void pdr_test(const int n_tests, const int n_packets,const int dev_iterator){
                 bytesToSend = AMCOM_Serialize(AMCOM_PDR_REQUEST, &pdr_request, sizeof(pdr_request), amcomBuf);
                 if (bytesToSend > 0) {
                     UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                    printf("I sent %d \n",pdr_request.packet_number);
+                    printf("Sent: Test: %d/%d, Packet: %d/%d\r", n+1, n_tests, i+1, n_packets);
+                    fflush(stdout);
+                    //printf("I sent %d \n",pdr_request.packet_number);
                     }
                 
-                }
+            }
+            printf("\n");
         }
         sleep(15);
          pdr_stop.perform_tests = pdr_start.expect_tests;
          bytesToSend = AMCOM_Serialize(AMCOM_PDR_STOP, &pdr_stop, sizeof(pdr_stop), amcomBuf);
          if (bytesToSend > 0) {
                UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-               printf("I sent stop\n");
+               printf("PDR stop\n");
                }
 }
 
@@ -219,14 +224,14 @@ void rtt_test(const int n_tests, const int n_packets,const int dev_iterator){
             bytesToSend = AMCOM_Serialize(AMCOM_RTT_REQUEST, &rtt_request, sizeof(rtt_request), amcomBuf);
             if (bytesToSend > 0) { 
                 gettimeofday(&rtt_information[i].rtt_info_time[n].start, NULL);  
-                printf("START Test: %d, Pakiet: %d, Czas: %lld",i,n, (long long int)(rtt_information[i].rtt_info_time[n].start.tv_sec * 1000000 + rtt_information[i].rtt_info_time[n].start.tv_usec));
-
+                //printf("START Test: %d, Pakiet: %d, Czas: %lld",i,n, (long long int)(rtt_information[i].rtt_info_time[n].start.tv_sec * 1000000 + rtt_information[i].rtt_info_time[n].start.tv_usec));
                 UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                printf("I sent rtt request\n");
+                printf("Sent: Test: %d/%d, Packet: %d/%d\r", i+1, n_tests, n+1, n_packets);
+                fflush(stdout);
             }
            
             }
-
+            printf("\n");
         }
         
         
@@ -245,11 +250,12 @@ void rssi_test(const int n_tests, const int n_packets,const int dev_iterator){
             bytesToSend = AMCOM_Serialize(AMCOM_RSSI_REQUEST, &rssi_request, sizeof(rssi_request), amcomBuf);
             if (bytesToSend > 0) { 
                 UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                printf("I sent rssi request\n");
+                printf("Sent: Test: %d/%d, Packet: %d/%d\r", i+1, n_tests, n+1, n_packets);
+                fflush(stdout);
             }
            
             }
-
+            printf("\n");
         }
 }
 
@@ -293,7 +299,6 @@ void thr_test(const int packet_size, const int dev_iterator){
 void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_start, const void *thr_req, const int dev_iterator){
     uint8_t amcomBuf[AMCOM_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
-    printf("Rozmiar %d\n", sizeof(number_of_packets));
 
     for(int n = 0; n < num_size; n++){
         
@@ -302,7 +307,7 @@ void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_sta
             
             if (bytesToSend > 0) {
                 UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                printf("I sent start\n");
+                printf("Throughput start\n");
             } 
           
             for (int i=0; i < number_of_packets[n]; i++){
@@ -311,11 +316,19 @@ void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_sta
                 bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_REQUEST, thr_req, sizeof(thr_req), amcomBuf);
                 if (bytesToSend > 0) {
                     UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-                    printf("I sent thr %d \n",i);
+                    printf("Sent: Test: %d/%d, Packet: %d/%d\r", n+1, num_size, i+1, number_of_packets[n]);
+                    fflush(stdout);
                     }
                
             }
             sleep(15);
+            printf("Po oczekiwaniu\n");
+            bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_STOP, NULL, 0, amcomBuf);
+            
+            if (bytesToSend > 0) {
+                UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
+                printf("Throughput stop\n");
+            } 
         }
 }
 
@@ -326,7 +339,7 @@ void ton_test(const int dev_iterator){
     bytesToSend = AMCOM_Serialize(AMCOM_TON_REQUEST, NULL, 0, amcomBuf);
     if (bytesToSend > 0) {
         UDPsend(amcomBuf, id_request[dev_iterator].deviceAddr);
-        printf("I sent ton \n");
+        printf("Ton sent \n");
     }
 
 }

@@ -12,7 +12,8 @@
 otInstance *otGetInstance(void);
 int8_t get_rssi(void);
 void UDPsend (uint8_t buf[AMCOM_MAX_PACKET_SIZE], size_t bytesToSend, const char* send_addr);
-uint16_t getJoinTime(void);
+uint32_t getJoinTime(void);
+
 
 static AMCOM_IdentifyRequestPayload id_request;
 static AMCOM_IdentifyResponsePayload id_response;
@@ -86,7 +87,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
 
               break;
       case AMCOM_PDR_STOP:
-        sprintf(pdr_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
+            sprintf(pdr_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
             bytesToSend = AMCOM_Serialize(AMCOM_PDR_RESPONSE, &pdr_response, sizeof(pdr_response), amcomBuf);
 
             for(int i = 0; i<pdr_start.expect_tests;i++){
@@ -137,10 +138,11 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
       case AMCOM_TON_RESPONSE:
               break;
       case AMCOM_THROUGHPUT_START:
-              thr_start.expect_packets = packet->payload[2] | packet->payload[3]<<8;
+              thr_start.expect_packet_size = packet->payload[0];
+              thr_start.expect_packets = packet->payload[1] | packet->payload[2]<<8;
               thr_response.recv_packets = 0;
-              timestamp=0;
-              send_thr = false;
+              //timestamp=0;
+              //send_thr = false;
               break;
       case AMCOM_THROUGHPUT_REQUEST:
               /*
@@ -163,6 +165,7 @@ void amcomPacketHandler(const AMCOM_Packet* packet, void* userContext){
               break;
       case AMCOM_THROUGHPUT_STOP:
               sprintf(thr_response.deviceName,"0x%04x", otThreadGetRloc16(otGetInstance()));
+              thr_response.packet_size = thr_start.expect_packet_size;
               bytesToSend = AMCOM_Serialize(AMCOM_THROUGHPUT_RESPONSE, &thr_response, sizeof(thr_response), amcomBuf);
 
               if (bytesToSend > 0) {

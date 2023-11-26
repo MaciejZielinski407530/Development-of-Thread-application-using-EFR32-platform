@@ -45,17 +45,19 @@
 #include "sl_simple_button.h"
 #endif
 
+#define JOINER_PSKd "J01NU5"
 // Define Commissioner PSKd
 #define COMMISSIONER_PSKd "J01NU5"
 // Define Commissioner Timeout [s]
 #define COMMISSIONER_TIMEOUT 100
 
+
 void initUdp(void);
 extern void otAppCliInit(otInstance *aInstance);
 
-volatile int msTickCount;
-static int             identify_time;
-static uint16_t             join_time;
+volatile uint32_t      msTickCount;
+static uint32_t        identify_time;
+static uint32_t        join_time;
 static otInstance *    sInstance       = NULL;
 static bool            sButtonPressed  = false;
 static bool            sStayAwake      = true;
@@ -69,11 +71,11 @@ void SysTick_Handler(void){
 
 }
 
-int getSysTick_time(void){
+uint32_t getSysTick_time(void){
   return msTickCount;
 }
 
-uint16_t getJoinTime(void){
+uint32_t getJoinTime(void){
   return join_time;
 }
 
@@ -158,7 +160,14 @@ void sl_ot_cli_init(void)
     otAppCliInit(sInstance);
 }
 
+void JoinerCallback(otError aError, void *aContext){
 
+  if(otJoinerGetState(sInstance) == OT_JOINER_STATE_IDLE && otThreadGetDeviceRole(sInstance) == OT_DEVICE_ROLE_DISABLED ){
+      assert(otJoinerStart(sInstance,JOINER_PSKd, NULL, NULL, NULL, NULL, NULL,JoinerCallback,NULL) == OT_ERROR_NONE);
+  }
+
+  otCliOutputFormat("Joiner state: %d\n",otJoinerGetState(sInstance));
+}
 /**************************************************************************//**
  * Application Init.
  *****************************************************************************/
@@ -172,7 +181,7 @@ void app_init(void)
 
     assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
 
-    assert(otJoinerStart(sInstance,"J01NU5", NULL, NULL, NULL, NULL, NULL,NULL,NULL) == OT_ERROR_NONE);
+    assert(otJoinerStart(sInstance,JOINER_PSKd, NULL, NULL, NULL, NULL, NULL,JoinerCallback,NULL) == OT_ERROR_NONE);
 
 }
 
@@ -188,7 +197,7 @@ void app_process_action(void)
     if(otJoinerGetState(sInstance) == OT_JOINER_STATE_JOINED && thread_st == false){
         assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
         thread_st = true;
-        join_time = (uint16_t) msTickCount;
+        join_time = msTickCount;
     }
 
     // First Identification and start Commissioner

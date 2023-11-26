@@ -133,11 +133,11 @@ typedef struct AMPACKED {
  
 typedef struct AMPACKED {
   char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
-  uint16_t time_on;
+  uint32_t time_on;
 } AMCOM_TON_ResponsePayload;
  
 typedef struct AMPACKED {
-  uint16_t expect_packet_size;
+  uint8_t expect_packet_size;
   uint16_t expect_packets;
 } AMCOM_THROUGHPUT_StartPayload;
  
@@ -154,9 +154,9 @@ typedef struct AMPACKED {
 } AMCOM_THROUGHPUT_RequestMaxPayload;
  
 typedef struct AMPACKED {
-  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN];
-  //uint16_t packet_size;
+  char deviceName[AMCOM_MAX_DEVICE_NAME_LEN]; 
   uint16_t recv_packets;
+  uint8_t packet_size;
 } AMCOM_THROUGHPUT_ResponsePayload;
  
  

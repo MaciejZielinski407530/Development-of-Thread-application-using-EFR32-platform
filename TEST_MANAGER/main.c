@@ -5,7 +5,7 @@
 
 #include "udp_config.h"
 #include "app_function.h"
-#include "amcom_packets.h"
+#include "test_packets.h"
 
 // Maximum length of input buffer
 #define MAX_BUFFER_SIZE 100
@@ -43,6 +43,12 @@ int main(void){
         if(sscanf(buff, "%s\n", test_name) == 1 && strcmp(test_name,"LIST") == 0){
             printf("Choice: LIST \n");
             dev_list();
+            continue;
+        }
+
+        if(sscanf(buff, "%s\n", test_name) == 1 && strcmp(test_name,"IDENTIFY") == 0){
+            printf("Choice: IDENTIFY \n");
+            identify();
             continue;
         }
 

@@ -20,6 +20,7 @@
 
 
 #include <assert.h>
+#include <sys/time.h>
 #include <openthread-core-config.h>
 #include <openthread/config.h>
 
@@ -40,29 +41,19 @@
 #include "sl_power_manager.h"
 #endif
 
-#if (defined(SL_CATALOG_BTN0_PRESENT) || defined(SL_CATALOG_BTN1_PRESENT))
-#include "sl_button.h"
-#include "sl_simple_button.h"
-#endif
-
+// Define JOINER PSKd
 #define JOINER_PSKd "J01NU5"
-// Define Commissioner PSKd
-#define COMMISSIONER_PSKd "J01NU5"
-// Define Commissioner Timeout [s]
-#define COMMISSIONER_TIMEOUT 100
+
 
 
 void initUdp(void);
 extern void otAppCliInit(otInstance *aInstance);
 
 volatile uint32_t      msTickCount;
-static uint32_t        identify_time;
 static uint32_t        join_time;
 static otInstance *    sInstance       = NULL;
-static bool            sButtonPressed  = false;
-static bool            sStayAwake      = true;
 static bool            thread_st       = false;
-extern bool            identified;
+
 
 
 void SysTick_Handler(void){
@@ -84,38 +75,6 @@ otInstance *otGetInstance(void)
     return sInstance;
 }
 
-#if (defined(SL_CATALOG_BTN0_PRESENT) || defined(SL_CATALOG_BTN1_PRESENT))
-void sl_button_on_change(const sl_button_t *handle)
-{
-    if (sl_button_get_state(handle) == SL_SIMPLE_BUTTON_PRESSED)
-    {
-        sButtonPressed = true;
-        otSysEventSignalPending();
-    }
-}
-#endif
-
-void sl_ot_rtos_application_tick(void)
-{
-    if (sButtonPressed)
-    {
-        otCliOutputFormat("przycisk\n");
-        sButtonPressed = false;
-        sStayAwake     = !sStayAwake;
-        if (sStayAwake)
-        {
-#ifdef SL_CATALOG_POWER_MANAGER_PRESENT
-            sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
-#endif
-        }
-        else
-        {
-#ifdef SL_CATALOG_POWER_MANAGER_PRESENT
-            sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
-#endif
-        }
-    }
-}
 
 /*
  * Provide, if required an "otPlatLog()" function
@@ -176,7 +135,7 @@ void app_init(void)
 {
     OT_SETUP_RESET_JUMP(argv);
 
-    initUdp();
+    srand(time(NULL));
     SysTick_Config(CMU_ClockFreqGet( cmuClock_CORE )/1000);
 
     assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);
@@ -198,31 +157,8 @@ void app_process_action(void)
         assert(otThreadSetEnabled(sInstance, true) == OT_ERROR_NONE);
         thread_st = true;
         join_time = msTickCount;
+        initUdp();
     }
-
-    // First Identification and start Commissioner
-    if ((msTickCount - identify_time)> 20000 && identified == false && get_dev_state() != 'D'){
-        identify_request();
-        identify_time = msTickCount;
-        otCommissionerStart(sInstance, NULL, NULL, NULL);
-    }
-
-    // Update identification info if something changed
-    if((msTickCount - identify_time)> 20000 && send_dev_info_correct() == false && identified == true){
-        identify_request();
-        identify_time = msTickCount;
-    }
-
-    // Start adding Joiner with the press of a button
-    if (sButtonPressed)
-        {
-            sButtonPressed = false;
-            if(otCommissionerGetState(sInstance) == OT_COMMISSIONER_STATE_ACTIVE){
-                otCommissionerAddJoiner(sInstance, NULL, COMMISSIONER_PSKd, COMMISSIONER_TIMEOUT);
-            }else{
-                otCliOutputFormat("Commissioner is not active\n");
-            }
-        }
 
 }
 
@@ -235,5 +171,5 @@ void app_exit(void)
 #if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
     free(otInstanceBuffer);
 #endif
-    // TO DO : pseudo reset?
+
 }

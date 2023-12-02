@@ -1,10 +1,12 @@
-#ifndef AMCOM_PACKETS_H_
-#define AMCOM_PACKETS_H_
+#ifndef TEST_PACKETS_H_
+#define TEST_PACKETS_H_
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
+
 #define TESTPACKED 							__attribute__((packed))
 
+#define MULTICAST_ADDRESS "ff05::1"
 #define TEST_MAX_PACKET_SIZE 200
 // Maximum length of device name
 #define TEST_MAX_DEVICE_NAME_LEN 10
@@ -17,7 +19,7 @@
 // Maximum number of connected device
 #define TEST_MAX_NEIGHBOR  10
 // Maximum length of IPv6 address
-#define TEST_MAX_ADDRESS_LEN  40
+#define INET6_ADDRSTRLEN  46
 
 
 // Payload size of Throughput packet min + 5 
@@ -34,34 +36,27 @@ typedef enum {
   TEST_RTT_REQUEST = 3,      // Zapytanie o czas synchronizacji
   TEST_RTT_RESPONSE = 4,     // Odesłanie swojego czasu, stanu synchronizacji
 
-  TEST_PDR_STOP = 6,     // Zakończenie testu PDR -> Klient odsyła AMCOM_PDR_RESPONSE
-  TEST_PDR_REQUEST = 7,      // Pakiet w tescie PDR: Nr. próby, Nr pakietu
-  TEST_PDR_RESPONSE = 8,     // Odpowiedź na AMCOM_PDR_STOP: informacja na temat ilości odebranych pakietów w danej turze
+  TEST_PDR_STOP = 5,     // Zakończenie testu PDR -> Klient odsyła AMCOM_PDR_RESPONSE
+  TEST_PDR_REQUEST = 6,      // Pakiet w tescie PDR: Nr. próby, Nr pakietu
+  TEST_PDR_RESPONSE = 7,     // Odpowiedź na AMCOM_PDR_STOP: informacja na temat ilości odebranych pakietów w danej turze
  
-  TEST_RSSI_REQUEST = 9,     // Zapytanie o czas synchronizacji
-  TEST_RSSI_RESPONSE = 10,   // Odesłanie swojego czasu, stanu synchronizacji
+  TEST_RSSI_REQUEST = 8,     // Zapytanie o czas synchronizacji
+  TEST_RSSI_RESPONSE = 9,   // Odesłanie swojego czasu, stanu synchronizacji
  
-  TEST_TON_REQUEST = 11,          // Ton
-  TEST_TON_RESPONSE = 12,
+  TEST_TON_REQUEST = 10,          // Ton
+  TEST_TON_RESPONSE = 11,
              
-  TEST_THROUGHPUT_REQUEST = 14,   // Throughput
-  TEST_THROUGHPUT_RESPONSE = 15,
-  TEST_THROUGHPUT_STOP = 16,
+  TEST_THROUGHPUT_REQUEST = 12,   // Throughput
+  TEST_THROUGHPUT_RESPONSE = 13,
+  TEST_THROUGHPUT_STOP = 14,
  
 } TEST_PacketType;
  
+
 typedef struct TESTPACKED {
   char deviceName[TEST_MAX_DEVICE_NAME_LEN];
-  char deviceAddr[TEST_MAX_ADDRESS_LEN];
-  char deviceState;
+  char deviceAddr[INET6_ADDRSTRLEN];
   bool active;
-} TEST_IdentifyRequestPayload;
- 
- 
-typedef struct TESTPACKED {
-  char deviceName[TEST_MAX_DEVICE_NAME_LEN];
-  char deviceAddr[TEST_MAX_ADDRESS_LEN];
- 
 } TEST_IdentifyResponsePayload;
  
 typedef struct TESTPACKED { 
@@ -106,11 +101,6 @@ typedef struct TESTPACKED {
   int8_t rssi;
 } TEST_RSSI_ResponsePayload;
  
- 
-typedef struct TESTPACKED {
-  //Empty
-} TEST_TON_RequestPayload;
- 
 typedef struct TESTPACKED {
   char deviceName[TEST_MAX_DEVICE_NAME_LEN];
   uint32_t time_on;
@@ -121,10 +111,6 @@ typedef struct TESTPACKED {
   uint8_t packet_size;
 } TEST_THROUGHPUT_StopPayload;
  
-typedef struct {
-  uint8_t test_uid;
-  uint8_t test_payload[THROUGHPUT_PAYLOAD];
-} TEST_THROUGHPUT_RequestPayload;
 
 typedef struct TESTPACKED {
   char deviceName[TEST_MAX_DEVICE_NAME_LEN];
@@ -132,8 +118,6 @@ typedef struct TESTPACKED {
   uint16_t recv_packets;
   uint8_t packet_size;
 } TEST_THROUGHPUT_ResponsePayload;
- 
- 
- 
+
  
 #endif

@@ -14,18 +14,16 @@
 #include <common/code_utils.hpp>
 #include <common/logging.hpp>
 
+#include "test_packets.h"
+
 #include "app_function.h"
-#include "amcom_packets.h"
-
-
-
 #include "sl_component_catalog.h"
 #ifdef SL_CATALOG_POWER_MANAGER_PRESENT
 #include "sl_power_manager.h"
 #endif
 
-//#define SendPORT 8888
 #define PORT 8080
+
 
 otInstance *otGetInstance(void);
 void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
@@ -45,10 +43,23 @@ void initUdp(void)
     otError    error;
     otSockAddr bindAddr;
 
+    otIp6Address multicast_addr;
+    otIp6AddressFromString(MULTICAST_ADDRESS, &multicast_addr);
+    otIp6SubscribeMulticastAddress(otGetInstance(), &multicast_addr);
+
     // Initialize bindAddr
     memset(&bindAddr, 0, sizeof(bindAddr));
     bindAddr.mPort = PORT;
 
+    const otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
+    while(address->mNext !=NULL){
+        if (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC){
+            bindAddr.mAddress = address->mAddress;
+            //otIp6AddressToString(&(address->mAddress), bindAddr.mAddress , sizeof(bindAddr.mAddress));
+            break;
+        }
+        address= address->mNext;
+    }
     // Open the socket
     error = otUdpOpen(otGetInstance(), &RecvSocket, ReceiveCallback, NULL);
     if (error != OT_ERROR_NONE)
@@ -109,8 +120,6 @@ void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *a
       // Read Message RSSI
       rssi = otMessageGetRss(aMessage);
 
-
-
       // Read the received message's payload
       receivedBytesCount = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
 
@@ -119,7 +128,7 @@ void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *a
 
       otCliOutputFormat("Message Received from %s  oraz RSSI = %d dBm\r\n", ipaddress,rssi); // Na koniec do usuniecia
 
-      udpPacketHandler((uint8_t*)buf,receivedBytesCount);
+      udpPacketHandler((uint8_t*)buf,receivedBytesCount, ipaddress);
 
 
 

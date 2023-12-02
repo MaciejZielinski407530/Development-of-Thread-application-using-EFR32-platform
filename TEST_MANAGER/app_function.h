@@ -1,10 +1,12 @@
  
-#ifndef FUN_MAIN_H_
-#define FUN_MAIN_H_
+#ifndef APP_FUNCTION_H_
+#define APP_FUNCTION_H_
 
 #include <stddef.h>
 #include <stdint.h>
  
+
+ void identify(void);
 /**
  * @brief AMCOM packet handler handling receive packets.
  *
@@ -13,7 +15,7 @@
  * @param userContext user defined, general purpose context, that will be fed back to the callback function
  *
  * */
-void udpPacketHandler(const void* packet, size_t bytesReceived);
+void udpPacketHandler(const void* packet, size_t bytesReceived, const char* address);
  
 /**
  * @brief Print Thread device connected to application
@@ -86,4 +88,4 @@ int find_dev (const char* name);
 
 
  
-#endif /* FUN_MAIN_H_ */
+#endif /* APP_FUNCTION_H_ */

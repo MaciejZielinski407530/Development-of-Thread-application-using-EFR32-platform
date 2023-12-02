@@ -1,4 +1,4 @@
- #include <string.h>
+#include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,16 +6,18 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdint.h>
- 
+#include <ifaddrs.h>
 #include "udp_config.h"
+#include <asm-generic/socket.h>
 
  
 #define SendPORT 8888
 #define RecvPORT 8080
- 
+void find_addr(void);
  
 static int send_sock;
 static struct sockaddr_in6 send_appAddr;
+
 
 /// Thread to listen on receive port
 void *recv_function(void *arg){
@@ -50,7 +52,7 @@ void *recv_function(void *arg){
         char clientIP[INET6_ADDRSTRLEN];
         inet_ntop(AF_INET6, &(recv_clientAddr.sin6_addr), clientIP, INET6_ADDRSTRLEN);
         printf("Odebrano wiadomość od [%s]\n", clientIP);
-        udpPacketHandler((uint8_t* )buf, bytesReceived);
+        udpPacketHandler((uint8_t* )buf, bytesReceived, clientIP);
 
     }
     close(recv_sock);
@@ -69,7 +71,12 @@ void initUdp(void)
     memset(&send_appAddr, 0, sizeof(send_appAddr));
     send_appAddr.sin6_family = AF_INET6;
     send_appAddr.sin6_port = htons(SendPORT);
-    send_appAddr.sin6_addr = in6addr_any;
+    find_addr();
+ 
+    if(setsockopt(send_sock, SOL_SOCKET, SO_BINDTODEVICE, "wpan0", strlen("wpan0"))<0){
+        perror("Blad opcji\n");
+        exit(1);
+    }
  
     if (bind(send_sock, (struct sockaddr *)&send_appAddr, sizeof(send_appAddr)) < 0) {
         perror("Błąd podczas bindowania gniazda");
@@ -98,4 +105,25 @@ void initUdp(void)
 
 }
  
+ void find_addr(void){
+    struct ifaddrs *ifaddr, *ifa;
+ 
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        exit(1);
+    }
+ 
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET6 && strcmp(ifa->ifa_name,"enp0s8")==0) {           
+            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)ifa->ifa_addr;
+
+            if(!(ipv6->sin6_scope_id ==0)){ // Sprawdzenie czy jest to adres globalny
+                continue;
+            }
+            send_appAddr.sin6_addr = ipv6->sin6_addr;
+            break;
+        }
+    }
+    freeifaddrs(ifaddr);
+}
  

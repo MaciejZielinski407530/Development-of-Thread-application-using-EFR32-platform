@@ -2,7 +2,7 @@
 #define UDP_CONFIG_H_
 
 #include "app_function.h"
-#include "amcom_packets.h"
+#include "test_packets.h"
 
 /**
  * @brief Initialization UDP socket to sending messages.

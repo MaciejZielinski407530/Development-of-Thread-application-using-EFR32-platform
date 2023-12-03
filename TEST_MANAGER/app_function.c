@@ -14,31 +14,38 @@
 #include <ifaddrs.h>
 #include <sys/time.h>
 
-
+// Delay before STOP packets
 #define WAIT_FOR_STOP 15
+// Number of retransmit packets 
 #define RETRANSMIT 3
 
 
 static TEST_IdentifyResponsePayload id_response[TEST_MAX_NEIGHBOR];
- 
 static RTT_PACKET_TIME rtt_packTime [TEST_MAX_RTT_PACKET];
 static TEST_THROUGHPUT_ResponsePayload thr_response;
 static TEST_PDR_ResponsePayload pdr_response;
-// Function to find application IPv6 address
-void search_addr(void);
 
-void send_thr(uint16_t number_of_packets[], size_t num_size, const void *thr_start, const void *thr_req, const int dev_iterator);
-
+/// @brief Function to write results in file
+/// @param filename File name
+/// @param text Results
 void file_writer(const char* filename, const char* text);
 
+/// @brief Function to generate a specific UID for testing
 uint8_t generate_uid(void);
+
+/// @brief Function to assembly payload of packet
+/// @param packetType  Packet type
+/// @param payload     Payload
+/// @param payloadSize  Size of payload
+/// @param destinationBuffer  Buffer to send  
+/// @return Bytes to send
 size_t TEST_Serialize(uint8_t packetType, const void* payload, size_t payloadSize, uint8_t* destinationBuffer);
 
 /// AMCOM packet handler handling receive packets 
 void udpPacketHandler(const void* packet, size_t bytesReceived, const char* address){
     static uint8_t testBuf[TEST_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
-    char results[60];
+    char results[TEST_MAX_PACKET_SIZE-1];
  
     switch (*((const uint8_t*)packet)) {     
         case TEST_IDENTIFY_RESPONSE:
@@ -60,16 +67,7 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
                     break;
                 }
                 if(strcmp(id_response[n].deviceAddr, address) == 0 && strcmp(id_response[n].deviceName, deviceName_temp) == 0 )
-                break;
-
-                if(strcmp(id_response[n].deviceAddr, address) == 0 || strcmp(id_response[n].deviceName, deviceName_temp) == 0 ){
-                    sprintf(id_response[n].deviceName, "%s", deviceName_temp);
-                    printf("CLI name update: %s\n", id_response[n].deviceName);
-                    strcpy(id_response[n].deviceAddr, address);
-                    printf("CLI addr update: %s\n", id_response[n].deviceAddr);
-                    id_response[n].active = true;
                     break;
-                }   
             }          
             break;
         case TEST_RTT_RESPONSE:
@@ -145,22 +143,16 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
     }
 }
 
-void file_writer(const char* filename, const char* text){
-    char file_name[TEST_MAX_DEVICE_NAME_LEN+4];
-    FILE *file;
-    sprintf(file_name,"%s.csv",filename);
-    file = fopen(file_name, "a");
-    fseek(file, 0, SEEK_END);
-    fprintf(file, "%s\n", text );
-    fclose(file);
-}
-
-
+// Function to identify devices in network
 void identify(void){
     uint8_t testBuf[TEST_MAX_PACKET_SIZE];
     size_t bytesToSend = 0;
     bytesToSend = TEST_Serialize(TEST_IDENTIFY_REQUEST, NULL, 0, testBuf);
     
+    for(int i = 0; i < TEST_MAX_NEIGHBOR ; i++){
+        id_response[i].active = false;
+    }
+
     for(int i=0; i<RETRANSMIT;i++){
         if (bytesToSend > 0) {
         UDPsend(testBuf, bytesToSend, MULTICAST_ADDRESS);
@@ -170,6 +162,7 @@ void identify(void){
     }
     
 }
+
 /// Function to trigger PDR test
 void pdr_test(const uint32_t packet_interval, const uint16_t n_packets,const int dev_iterator){      
     static TEST_PDR_RequestPayload pdr_request;
@@ -253,11 +246,11 @@ void thr_test(const uint8_t packet_size, const int dev_iterator){
     size_t bytesToSend = 0;
     
     thr_request[0] = generate_uid();   
-    for(uint8_t i = 1; i >packet_size-2; i--){  // (-2B dla TYPE, UID)
+    for(uint8_t i = 1; i >packet_size-2; i--){  // (-2B for TYPE, UID)
             thr_request[i] = i;
         }
-    for (int i=0; i < 1500; i++){
-        usleep(10000); // Co najmniej 10s 
+    for (int i=0; i < 1000; i++){
+        usleep(10000); // At least 10s 
         
         bytesToSend = TEST_Serialize(TEST_THROUGHPUT_REQUEST, thr_request, packet_size-1, testBuf);
         if (bytesToSend > 0) {
@@ -294,19 +287,6 @@ void ton_test(const int dev_iterator){
 
 }
 
-uint8_t generate_uid(void){
-    return rand()%256;
-}
-
-/// Print Thread device connected to application
-void dev_list(void){
-    printf("Connected Device List: \n");
-    for(int i = 0; i < TEST_MAX_NEIGHBOR; i++){
-        if(strlen(id_response[i].deviceName) > 0)
-            printf("Device name: %s Device Address: %s\n", id_response[i].deviceName, id_response[i].deviceAddr);
-    }
-}
-
 /// Function finding device number in list of connected device
 int find_dev (const char* name){
     for(int i = 0; i < TEST_MAX_NEIGHBOR; i++){
@@ -316,13 +296,36 @@ int find_dev (const char* name){
     return -1;
 }
 
+/// Print Thread device connected to application
+void dev_list(void){
+    printf("Connected Device List: \n");
+    for(int i = 0; i < TEST_MAX_NEIGHBOR; i++){
+        if(id_response[i].active == true)
+            printf("Device name: %s Device Address: %s\n", id_response[i].deviceName, id_response[i].deviceAddr);
+    }
+}
+
+void file_writer(const char* filename, const char* text){
+    char file_name[TEST_MAX_DEVICE_NAME_LEN+4];
+    FILE *file;
+    sprintf(file_name,"%s.csv",filename);
+    file = fopen(file_name, "a");
+    fseek(file, 0, SEEK_END);
+    fprintf(file, "%s\n", text );
+    fclose(file);
+}
+
+uint8_t generate_uid(void){
+    return rand()%256;
+}
+
 size_t TEST_Serialize(uint8_t packetType, const void* payload, size_t payloadSize, uint8_t* destinationBuffer){
     size_t i = 0;
     destinationBuffer[i] = packetType;
     if(payload == NULL || payloadSize == 0){
         return 1;
     }
-    for (i = 1; i < (payloadSize + 1); i++) {  // Jesli LENGTH > 0 to dodanie danych do pakietu
+    for (i = 1; i < (payloadSize + 1); i++) {  
         destinationBuffer[i] = *((const char*)payload + i - 1);
     }
     return i;

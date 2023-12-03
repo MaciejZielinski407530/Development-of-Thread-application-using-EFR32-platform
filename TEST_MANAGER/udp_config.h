@@ -5,7 +5,7 @@
 #include "test_packets.h"
 
 /**
- * @brief Initialization UDP socket to sending messages.
+ * @brief UDP socket to sending messages initialization.
  *
  * */
 void initUdp(void);
@@ -14,7 +14,8 @@ void initUdp(void);
  * @brief Function to sending UDP message
  *
  *
- * @param buf AMCOM packet to send
+ * @param buf Message to send
+ * @param PayloadSize Message length
  * @param send_addr Destination IPv6 address
  *
  * */

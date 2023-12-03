@@ -15,12 +15,10 @@
  * sections of the MSLA applicable to Source Code.
  *
  ******************************************************************************/
-// Define module name for Power Manager debuging feature.
-#define CURRENT_MODULE_NAME    "OPENTHREAD_SAMPLE_APP"
-
 
 #include <assert.h>
 #include <sys/time.h>
+#include <stdint.h>
 #include <openthread-core-config.h>
 #include <openthread/config.h>
 
@@ -45,7 +43,6 @@
 #define JOINER_PSKd "J01NU5"
 
 
-
 void initUdp(void);
 extern void otAppCliInit(otInstance *aInstance);
 
@@ -56,17 +53,18 @@ static bool            thread_st       = false;
 
 
 
-void SysTick_Handler(void){
-
+void SysTick_Handler(void)
+{
   msTickCount++;
-
 }
 
-uint32_t getSysTick_time(void){
+uint32_t getSysTick_time(void)
+{
   return msTickCount;
 }
 
-uint32_t getJoinTime(void){
+uint32_t getJoinTime(void)
+{
   return join_time;
 }
 
@@ -136,6 +134,7 @@ void app_init(void)
     OT_SETUP_RESET_JUMP(argv);
 
     srand(time(NULL));
+
     SysTick_Config(CMU_ClockFreqGet( cmuClock_CORE )/1000);
 
     assert(otIp6SetEnabled(sInstance, true) == OT_ERROR_NONE);

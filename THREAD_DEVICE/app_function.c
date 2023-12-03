@@ -18,21 +18,13 @@ size_t TEST_Serialize(uint8_t packetType, const void* payload, size_t payloadSiz
 
 
 static TEST_IdentifyResponsePayload id_response;
-
 static TEST_RTT_ResponsePayload rtt_response;
-
 static TEST_PDR_ResponsePayload pdr_response;
-
 static TEST_RSSI_ResponsePayload rssi_response;
-
 static TEST_TON_ResponsePayload ton_response;
-
 static TEST_THROUGHPUT_ResponsePayload thr_response;
 
-
-bool  identified = false;
-uint32_t   timestamp = 0;
-
+uint32_t   timestamp = 0;   // Stores a temporary value of SysTick time
 
 // Handling AMCOM Packets
 void udpPacketHandler(const void* packet, size_t bytesReceived, const char* address){
@@ -51,15 +43,15 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
                 break;
             }
         }
-          otCliOutputFormat("identify%d\n",bytesToSend);
+          otCliOutputFormat("IDENTIFICATION REQUEST\n");
           if (bytesToSend > 0) {
               UDPsend(amcomBuf, bytesToSend, address);
-              identified = true;     // Identification FLAG
+              otCliOutputFormat("IDENTIFICATION RESPONSE\n");
             }
 
         break;
       case TEST_RTT_REQUEST:
-              otCliOutputFormat("Otrzymalem rtt req\n");
+              otCliOutputFormat("RTT REQUEST\n");
 
               sprintf(rtt_response.deviceName,"%s", id_response.deviceName);
               rtt_response.packet_nunmber = *((const uint8_t*)packet+1)|*((const uint8_t*)packet+1+1)<<8;
@@ -68,36 +60,34 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
               // Sending RTT Response
               if (bytesToSend > 0) {
                   UDPsend(amcomBuf, bytesToSend, address);
-                  otCliOutputFormat("Wysylam rtt response\n");
+                  otCliOutputFormat("RTT RESPONSE\n");
               }
 
               break;
       case TEST_PDR_STOP:
             if(*((const uint8_t*)packet+1) != pdr_response.test_uid){
-                otCliOutputFormat("PDR STOP RECV uid: %d THR uid: %d\n",*((const uint8_t*)packet+1),pdr_response.test_uid);
                 pdr_response.recv_packets = 0;
             }
             sprintf(pdr_response.deviceName,"%s", id_response.deviceName);
             bytesToSend = TEST_Serialize(TEST_PDR_RESPONSE, &pdr_response, sizeof(pdr_response), amcomBuf);
 
-            otCliOutputFormat("UID: %d Otrzymalem %d pakietow z %d",pdr_response.test_uid, pdr_response.recv_packets, pdr_response.total_packets_number );
+            otCliOutputFormat("PDR STOP UID: %d Otrzymalem %d pakietow z %d\n",pdr_response.test_uid, pdr_response.recv_packets, pdr_response.total_packets_number );
 
             // Sending PDR Response
             if (bytesToSend > 0) {
                 UDPsend(amcomBuf, bytesToSend,  address);
-                otCliOutputFormat("Wysylam pdr response");
+                otCliOutputFormat("PDR RESPONSE\n");
             }
               break;
       case TEST_PDR_REQUEST:
               if(*((const uint8_t*)packet+1) != pdr_response.test_uid){
                   pdr_response.test_uid = *((const uint8_t*)packet+1);
-                  otCliOutputFormat("PDR REQ Recv uid: %d THR uid: %d\n",*((const uint8_t*)packet+1),pdr_response.test_uid);
                   pdr_response.recv_packets = 0;
                   pdr_response.total_packets_number = *((const uint8_t*)packet+1+3)|*((const uint8_t*)packet+1+4)<<8;
               }
 
               pdr_response.recv_packets++;
-              otCliOutputFormat("UID: %d %d %d %d \n",*((const uint8_t*)packet+1),pdr_response.test_uid,pdr_response.recv_packets, *((const uint8_t*)packet+1+1)|*((const uint8_t*)packet+1+2)<<8);
+              otCliOutputFormat("PDR REQUEST UID: %d %d %d %d \n",*((const uint8_t*)packet+1),pdr_response.test_uid,pdr_response.recv_packets, *((const uint8_t*)packet+1+1)|*((const uint8_t*)packet+1+2)<<8);
               break;
       case TEST_RSSI_REQUEST:
               sprintf(rssi_response.deviceName,"%s", id_response.deviceName);
@@ -108,7 +98,7 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
               // Sending RSSI Response
               if (bytesToSend > 0) {
                     UDPsend(amcomBuf, bytesToSend, address);
-                    otCliOutputFormat("Wysylam rssi response");
+                    otCliOutputFormat("RSSI RESPONSE\n");
                }
 
               break;
@@ -120,7 +110,7 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
               // Sending Ton Response
               if (bytesToSend > 0) {
                   UDPsend(amcomBuf, bytesToSend, address);
-                  otCliOutputFormat("Wysylam ton response %d vs %d",ton_response.time_on, getJoinTime());
+                  otCliOutputFormat("TON RESPONSE\n");
               }
 
               break;
@@ -132,7 +122,6 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
                }
                if(getSysTick_time()-timestamp <= 10000){
                   thr_response.recv_packets++;
-                  otCliOutputFormat("Recv %d", thr_response.recv_packets);
                }
               break;
       case TEST_THROUGHPUT_STOP:
@@ -145,7 +134,7 @@ void udpPacketHandler(const void* packet, size_t bytesReceived, const char* addr
 
               if (bytesToSend > 0) {
                   UDPsend(amcomBuf, bytesToSend, address);
-                  otCliOutputFormat("Wysylam thr response %d recv packet size: %d\n",thr_response.recv_packets, thr_response.packet_size );
+                  otCliOutputFormat("THR RESPONSE %d recv packet size: %d\n",thr_response.recv_packets, thr_response.packet_size );
              }
               break;
       default:

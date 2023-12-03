@@ -1,5 +1,3 @@
-
-
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -43,7 +41,7 @@ void initUdp(void)
     otError    error;
     otSockAddr bindAddr;
 
-    otIp6Address multicast_addr;
+    otIp6Address multicast_addr;          // ADD MULTICAST address for identification
     otIp6AddressFromString(MULTICAST_ADDRESS, &multicast_addr);
     otIp6SubscribeMulticastAddress(otGetInstance(), &multicast_addr);
 
@@ -51,11 +49,11 @@ void initUdp(void)
     memset(&bindAddr, 0, sizeof(bindAddr));
     bindAddr.mPort = PORT;
 
+    // Bind SLAAC address to the socket
     const otNetifAddress *address = otIp6GetUnicastAddresses(otGetInstance());
     while(address->mNext !=NULL){
         if (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC){
             bindAddr.mAddress = address->mAddress;
-            //otIp6AddressToString(&(address->mAddress), bindAddr.mAddress , sizeof(bindAddr.mAddress));
             break;
         }
         address= address->mNext;
@@ -68,7 +66,7 @@ void initUdp(void)
         return;
     }
 
-    // Bind to the socket. Close the socket if bind fails.
+    // Bind to the socket
     error = otUdpBind(otGetInstance(), &RecvSocket, &bindAddr, OT_NETIF_THREAD);
     if (error != OT_ERROR_NONE)
     {
@@ -123,10 +121,10 @@ void ReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *a
       // Read the received message's payload
       receivedBytesCount = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
 
-      memcpy(&RecvAddress, &aMessageInfo->mPeerAddr, sizeof RecvAddress);               // Na koniec do usuniecia
-      otIp6AddressToString(&RecvAddress, ipaddress, sizeof(ipaddress));                 // Na koniec do usuniecia
+      memcpy(&RecvAddress, &aMessageInfo->mPeerAddr, sizeof RecvAddress);
+      otIp6AddressToString(&RecvAddress, ipaddress, sizeof(ipaddress));
 
-      otCliOutputFormat("Message Received from %s  oraz RSSI = %d dBm\r\n", ipaddress,rssi); // Na koniec do usuniecia
+      otCliOutputFormat("Message Received from %s  RSSI = %d dBm\r\n", ipaddress,rssi);
 
       udpPacketHandler((uint8_t*)buf,receivedBytesCount, ipaddress);
 

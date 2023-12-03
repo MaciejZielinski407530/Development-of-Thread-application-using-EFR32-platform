@@ -6,7 +6,9 @@
 
 #define TESTPACKED 							__attribute__((packed))
 
+// Multicast address
 #define MULTICAST_ADDRESS "ff05::1"
+// Maximum packet size [B]
 #define TEST_MAX_PACKET_SIZE 200
 // Maximum length of device name
 #define TEST_MAX_DEVICE_NAME_LEN 10
@@ -20,8 +22,6 @@
 #define TEST_MAX_NEIGHBOR  10
 // Maximum length of IPv6 address
 #define INET6_ADDRSTRLEN  46
-
-
 // Payload size of Throughput packet min + 5 
 #define THROUGHPUT_PAYLOAD 100
 
@@ -29,23 +29,17 @@
  
 typedef enum {
   TEST_NO_PACKET = 0,
- 
-  TEST_IDENTIFY_REQUEST = 1,   // Prośba o identyfikacje
-  TEST_IDENTIFY_RESPONSE = 2,    // Odesłanie nazwy, adresu, state
- 
-  TEST_RTT_REQUEST = 3,      // Zapytanie o czas synchronizacji
-  TEST_RTT_RESPONSE = 4,     // Odesłanie swojego czasu, stanu synchronizacji
-
-  TEST_PDR_STOP = 5,     // Zakończenie testu PDR -> Klient odsyła AMCOM_PDR_RESPONSE
-  TEST_PDR_REQUEST = 6,      // Pakiet w tescie PDR: Nr. próby, Nr pakietu
-  TEST_PDR_RESPONSE = 7,     // Odpowiedź na AMCOM_PDR_STOP: informacja na temat ilości odebranych pakietów w danej turze
- 
-  TEST_RSSI_REQUEST = 8,     // Zapytanie o czas synchronizacji
-  TEST_RSSI_RESPONSE = 9,   // Odesłanie swojego czasu, stanu synchronizacji
- 
+  TEST_IDENTIFY_REQUEST = 1,      // IDENTIFICATION
+  TEST_IDENTIFY_RESPONSE = 2,    
+  TEST_RTT_REQUEST = 3,           // RTT
+  TEST_RTT_RESPONSE = 4,     
+  TEST_PDR_STOP = 5,              // PDR
+  TEST_PDR_REQUEST = 6,     
+  TEST_PDR_RESPONSE = 7,     
+  TEST_RSSI_REQUEST = 8,          // RSSI
+  TEST_RSSI_RESPONSE = 9,   
   TEST_TON_REQUEST = 10,          // Ton
-  TEST_TON_RESPONSE = 11,
-             
+  TEST_TON_RESPONSE = 11,        
   TEST_THROUGHPUT_REQUEST = 12,   // Throughput
   TEST_THROUGHPUT_RESPONSE = 13,
   TEST_THROUGHPUT_STOP = 14,

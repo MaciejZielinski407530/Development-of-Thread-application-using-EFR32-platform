@@ -6,11 +6,12 @@
 
 #define MULTICAST_ADDRESS "ff05::1"
 /**
- * @brief AMCOM packet handler handling receive packets.
+ * @brief UDP packet handler handling receive packets.
  *
  *
- * @param packet AMCOM packet to handle
- * @param userContext user defined, general purpose context, that will be fed back to the callback function
+ * @param packet  to handle
+ * @param bytesReceived Length received packet
+ * @param address Source IPv6 address
  *
  * */
 void udpPacketHandler(const void* packet, size_t bytesReceived, const char* address);

@@ -16,20 +16,21 @@
 extern void *recv_function(void *arg);
 
 int main(void){
-    char buff[MAX_BUFFER_SIZE];
-    char test_name[MAX_TEST_NAME_SIZE];
+    char buff[MAX_BUFFER_SIZE];     // Input buffer
 
-    uint32_t packet_interval;
-    uint16_t number_of_packet;
-    uint8_t packet_size;
-    char device_name [TEST_MAX_DEVICE_NAME_LEN];
-    pthread_t recv_thread;
+    char test_name[MAX_TEST_NAME_SIZE]; // Test name
+    char device_name [TEST_MAX_DEVICE_NAME_LEN]; // Device name
+    uint32_t packet_interval;           // Time between packets [ms]
+    uint16_t number_of_packet;          // Number of packets in test
+    uint8_t packet_size;                // Packet size in throughput test
+    
+    pthread_t recv_thread;  
     
     srand(time(NULL));
 
-    initUdp();
+    initUdp();      // UDP initialization for sending messages
 
-    // Start receiving thread
+    // Start a thread about receiving messages
     if(pthread_create(&recv_thread, NULL, recv_function, NULL)){
         perror("Error creating recv thread");
         exit(1);
@@ -46,6 +47,7 @@ int main(void){
             continue;
         }
 
+        // Start identifying devices on network
         if(sscanf(buff, "%s\n", test_name) == 1 && strcmp(test_name,"IDENTIFY") == 0){
             printf("Choice: IDENTIFY \n");
             identify();
@@ -53,13 +55,13 @@ int main(void){
         }
 
         // Start Packet Delivery Ratio test
-        if(strcmp(test_name,"PDR") == 0 && sscanf(buff, "%s %d %hd %s\n", test_name, &packet_interval, &number_of_packet, device_name) == 4){
+        if(sscanf(buff, "%s %d %hd %s\n", test_name, &packet_interval, &number_of_packet, device_name) == 4 && strcmp(test_name,"PDR") == 0){
             printf("Choice: Test PDR \n");
             if(TEST_MAX_PDR_PACKET < number_of_packet){
-                printf("Error: Bad argumen\nt");
+                printf("Error: Bad argument\nt");
                 continue;
             }
-            int it = find_dev(device_name);
+            int it = find_dev(device_name);  // Check if device is listed
             if(it >= 0 ){
                 pdr_test(packet_interval, number_of_packet, it);
             } else{
@@ -69,13 +71,13 @@ int main(void){
         }
 
         // Start Round Trip Time test
-        if(strcmp(test_name,"RTT")==0 && sscanf(buff, "%s %d %hd %s\n", test_name, &packet_interval, &number_of_packet, device_name) == 4){
+        if(sscanf(buff, "%s %d %hd %s\n", test_name, &packet_interval, &number_of_packet, device_name) == 4 && strcmp(test_name,"RTT")==0){
             printf("Choice: Test RTT \n");
             if(TEST_MAX_RTT_PACKET < number_of_packet ){
                 printf("Error: Bad argument\n");
                 continue;
             }
-            int it = find_dev(device_name);
+            int it = find_dev(device_name);     // Check if device is listed
             if(it >= 0 ){
                 rtt_test(packet_interval, number_of_packet, it);
             } else{
@@ -85,13 +87,13 @@ int main(void){
         }
 
         // Start RSSI test
-        if(strcmp(test_name,"RSSI") == 0 && sscanf(buff, "%s %d %hd %s\n", test_name, &packet_interval, &number_of_packet, device_name) == 4){
+        if(sscanf(buff, "%s %d %hd %s\n", test_name, &packet_interval, &number_of_packet, device_name) == 4 && strcmp(test_name,"RSSI") == 0){
             printf("Choice: Test RSSI \n");
             if(TEST_MAX_RSSI_PACKET < number_of_packet ){
                 printf("Error: Bad argument\n");
                 continue;
             }
-            int it = find_dev(device_name);
+            int it = find_dev(device_name);     // Check if device is listed
             if(it >= 0 ){
                 rssi_test(packet_interval, number_of_packet, it);
             } else{
@@ -102,13 +104,12 @@ int main(void){
 
         // Start Throughput test
         if(sscanf(buff, "%s %hhd %s\n", test_name, &packet_size, device_name) == 3 && strcmp(test_name,"THR")==0 ){
-            printf("Choice: Test Throughput \n");
-            /*
-            if(THROUGHPUT_MIN_PAYLOAD != number_of_packet && THROUGHPUT_MID_PAYLOAD != number_of_packet && THROUGHPUT_MAX_PAYLOAD != number_of_packet ){
+            printf("Choice: Test Throughput \n");            
+            if(THROUGHPUT_PAYLOAD < packet_size ){
                 printf("Error: Bad argument\n");
                 continue;
-            }*/
-            int it = find_dev(device_name);
+            }
+            int it = find_dev(device_name);     // Check if device is listed
             if(it >= 0 ){
                 thr_test(packet_size, it);
             } else{
@@ -120,7 +121,7 @@ int main(void){
         // Start Ton test
         if(sscanf(buff, "%s %s\n", test_name, device_name) == 2 && strcmp(test_name,"TON")==0 ){
             printf("Choice: Test Ton \n");
-            int it = find_dev(device_name);
+            int it = find_dev(device_name);     // Check if device is listed
             if(it >= 0 ){
                 ton_test(it);
             } else{
